@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { logout } from '../../services/auth';
 
 const Navbar = () => {
+  const { user } = useAuth();
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
 
@@ -26,8 +29,24 @@ const Navbar = () => {
             >
               Historial
             </Link>
+            <Link 
+              to="/progress" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/progress') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
+            >
+              Progreso
+            </Link>
           </div>
-          <div className="text-white font-bold text-lg hidden sm:block">Gym App</div>
+          <div className="flex items-center gap-4">
+            <div className="text-white font-bold text-lg hidden sm:block">Gym App</div>
+            <button
+              onClick={logout}
+              className="text-sm text-red-400 hover:text-red-300 transition-colors font-medium flex items-center gap-1"
+            >
+              Salir <span className="text-gray-600 text-xs hidden xs:inline">({user?.displayName?.split(" ")[0] || "Usuario"})</span>
+            </button>
+          </div>
         </div>
       </div>
     </nav>

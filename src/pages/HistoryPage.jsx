@@ -270,6 +270,7 @@ const HistoryPage = () => {
             if (!groupsMap[key]) {
               groupsMap[key] = {
                 name: set.exercise,
+                muscleGroup: set.muscleGroup,
                 sets: [],
                 volume: 0
               };
@@ -330,7 +331,12 @@ const HistoryPage = () => {
                     <div key={gIdx} className="space-y-2">
                       {/* exercise header */}
                       <div className="flex justify-between items-baseline border-b border-gray-800 pb-1 mb-2">
-                        <h4 className="text-white font-bold capitalize text-lg">{group.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-white font-bold capitalize text-lg">{group.name}</h4>
+                          <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full capitalize">
+                            {group.muscleGroup}
+                          </span>
+                        </div>
                         <span className="text-xs text-gray-500">
                           Total: {Math.round(group.volume).toLocaleString()} {displayUnit}
                         </span>
@@ -356,6 +362,7 @@ const HistoryPage = () => {
 
                           const isConverted = set.unit !== displayUnit;
                           const displayWeight = convertWeight(set.weight, set.unit, displayUnit);
+                          const converted1RM = convertWeight(set.estimated1RM, set.unit, displayUnit);
 
                           return (
                             <div 
@@ -373,6 +380,10 @@ const HistoryPage = () => {
                                 </span>
                                 <span className="text-gray-500 mx-1">x</span>
                                 <span>{set.reps}</span>
+                                
+                                <span className="text-[10px] text-gray-500 ml-2 opacity-70">
+                                  (1RM: {Math.round(converted1RM)}{displayUnit})
+                                </span>
                                 
                                 {set.rpe && (
                                   <span className={`ml-2 text-xs font-bold ${set.rpe >= 9 ? 'text-red-400' : set.rpe >= 7 ? 'text-yellow-400' : 'text-green-400'}`}>

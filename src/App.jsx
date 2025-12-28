@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import LoginPage from "./pages/LoginPage";
 import Navbar from "./components/layout/Navbar";
 import HistoryPage from "./pages/HistoryPage";
+import ProgressPage from "./pages/ProgressPage";
 
 function App() {
   return (
@@ -27,6 +28,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <HistoryPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/progress" 
+            element={
+              <ProtectedRoute>
+                <ProgressPage />
               </ProtectedRoute>
             } 
           />

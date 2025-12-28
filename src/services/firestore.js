@@ -398,3 +398,21 @@ export const getMuscleGroups = async (userId) => {
     return [];
   }
 };
+
+export const getAnalyticsData = async (userId, startDate, endDate) => {
+  try {
+    const q = query(
+      collection(db, "workout_logs"),
+      where("userId", "==", userId),
+      where("dateString", ">=", startDate),
+      where("dateString", "<=", endDate),
+      orderBy("dateString", "asc")
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("error en getAnalyticsData:", error);
+    throw error;
+  }
+};

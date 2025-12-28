@@ -86,12 +86,15 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
                 const displayWeight = set.unit === currentUnit 
                   ? set.weight 
                   : parseFloat(convertedWeight.toFixed(2));
+                
+                const converted1RM = convertWeight(set.estimated1RM, set.unit, currentUnit);
 
                 return (
                   <li key={index} className={`text-sm font-mono flex items-center ${set.isDropSet ? 'text-gray-400 ml-4' : 'text-gray-300'}`}>
                     <span className={`mr-2 ${set.labelColor}`}>{set.displayLabel}</span>
                     {displayWeight}
                     {currentUnit} <span className="text-gray-500 mx-1">x</span> {set.reps}
+                    <span className="text-[10px] text-gray-500 ml-1 opacity-80">(1RM: {Math.round(converted1RM)}{currentUnit})</span>
                     {set.rpe && (
                       <span className={`ml-2 text-xs font-bold ${getRpeColor(set.rpe)}`}>
                         @ RPE {set.rpe}
