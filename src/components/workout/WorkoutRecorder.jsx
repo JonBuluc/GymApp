@@ -7,19 +7,20 @@ import StatsPanel from './StatsPanel';
 const WorkoutRecorder = () => {
   const { user } = useAuth();
   
-  // Estado del formulario
+  // estado del formulario
   const [muscleGroup, setMuscleGroup] = useState('');
   const [exercise, setExercise] = useState('');
   const [unit, setUnit] = useState('kg');
+  const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0]);
   const [sets, setSets] = useState([{ id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false, isDropSet: false }]);
   
-  // Estado de datos externos
+  // estado de datos externos
   const [availableMuscleGroups, setAvailableMuscleGroups] = useState([]);
   const [exerciseCatalog, setExerciseCatalog] = useState([]);
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
-  // Cargar grupos musculares usados anteriormente
+  // cargar grupos musculares usados anteriormente
   useEffect(() => {
     const fetchMuscleGroups = async () => {
       if (user) {
@@ -30,7 +31,7 @@ const WorkoutRecorder = () => {
     fetchMuscleGroups();
   }, [user]);
 
-  // Cargar catálogo de ejercicios
+  // cargar catalogo de ejercicios
   useEffect(() => {
     const fetchCatalog = async () => {
       if (user && muscleGroup) {
@@ -43,7 +44,7 @@ const WorkoutRecorder = () => {
     fetchCatalog();
   }, [user, muscleGroup]);
   
-  // Cargar estadísticas con debounce
+  // cargar estadisticas con debounce
   useEffect(() => {
     const fetchStats = async () => {
       if (user && exercise) {
@@ -65,7 +66,7 @@ const WorkoutRecorder = () => {
     return () => clearTimeout(timeoutId);
   }, [user, exercise]);
 
-  // Manejadores de sets
+  // manejadores de sets
   const handleSetChange = (id, field, value) => {
     setSets(prevSets => prevSets.map(s => s.id === id ? { ...s, [field]: value } : s));
   };
@@ -80,7 +81,7 @@ const WorkoutRecorder = () => {
     }
   };
 
-  // Procesamiento de series (Orden y 1RM)
+  // procesamiento de series orden y 1rm
   const processedSets = useMemo(() => {
     let visualCounter = 1;
     let dbCounter = 1;
@@ -90,7 +91,7 @@ const WorkoutRecorder = () => {
       const reps = parseInt(set.reps, 10) || 0;
       const estimated1RM = weight * (1 + reps / 30);
       
-      // Regla: Solo el index 0 puede ser warmup visualmente
+      // regla solo el index 0 puede ser warmup visualmente
       const isWarmup = index === 0 && set.isWarmup;
       
       let displayOrder;
@@ -101,7 +102,7 @@ const WorkoutRecorder = () => {
         setOrder = 0;
       } else {
         setOrder = dbCounter++;
-        // Si es Drop Set y no es la primera fila absoluta (aunque la regla visual es index > 0)
+        // si es drop set y no es la primera fila absoluta aunque la regla visual es index > 0
         if (set.isDropSet && index > 0) {
           displayOrder = '↳';
         } else {
@@ -136,15 +137,16 @@ const WorkoutRecorder = () => {
       muscleGroup,
       exercise,
       unit,
-      sets: validSets
+      sets: validSets,
+      date: workoutDate
     };
 
     try {
       await saveWorkoutBatch(workoutData);
       alert("Entrenamiento guardado exitosamente.");
-      // Resetear sets
+      // resetear sets
       setSets([{ id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false, isDropSet: false }]);
-      // Recargar stats
+      // recargar stats
       const newStats = await getExerciseStats(user.uid, exercise);
       setStats(newStats);
     } catch (error) {
@@ -155,7 +157,18 @@ const WorkoutRecorder = () => {
 
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-6">
-      {/* Selectores */}
+      {/* selector de fecha */}
+      <div className="flex justify-end">
+        <input 
+          type="date" 
+          value={workoutDate} 
+          onChange={(e) => setWorkoutDate(e.target.value)}
+          className="bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style={{ colorScheme: 'dark' }}
+        />
+      </div>
+
+      {/* selectores */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Combobox
           value={muscleGroup}
@@ -171,7 +184,7 @@ const WorkoutRecorder = () => {
         />
       </div>
 
-      {/* Tabla de Series */}
+      {/* tabla de series */}
       <div className="bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-700">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-white">Series</h2>
@@ -181,7 +194,7 @@ const WorkoutRecorder = () => {
           </div>
         </div>
 
-        {/* Cabeceras */}
+        {/* cabeceras */}
         <div className="grid grid-cols-12 gap-2 mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">
           <div className="col-span-1">#</div>
           <div className="col-span-1">
@@ -195,7 +208,7 @@ const WorkoutRecorder = () => {
           <div className="col-span-1"></div>
         </div>
 
-        {/* Filas */}
+        {/* filas */}
         <div className="space-y-2">
           {processedSets.map((set, index) => (
             <div key={set.id} className="grid grid-cols-12 gap-2 items-center">
@@ -235,7 +248,7 @@ const WorkoutRecorder = () => {
 
       <button onClick={handleSave} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95">GUARDAR ENTRENAMIENTO</button>
 
-      {/* Panel de Estadísticas */}
+      {/* panel de estadisticas */}
       <StatsPanel stats={stats} loading={loadingStats} currentUnit={unit} />
     </div>
   );

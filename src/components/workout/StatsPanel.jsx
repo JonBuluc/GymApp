@@ -46,12 +46,12 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
     );
   }
 
-  // Ordenar sets de la última sesión por orden de ejecución
+  // ordenar sets de la ultima sesion por orden de ejecucion
   const sortedSession = lastSession
     ? [...lastSession].sort((a, b) => a.setOrder - b.setOrder)
     : [];
 
-  // Pre-procesamiento de etiquetas para conteo correcto
+  // pre procesamiento de etiquetas para conteo correcto
   let effectiveSetCount = 0;
   const processedSession = sortedSession.map((set) => {
     let displayLabel;
@@ -73,7 +73,7 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      {/* Tarjeta 1: Última Sesión */}
+      {/* tarjeta 1 ultima sesion */}
       <StatCard title="Última Sesión">
         {processedSession.length > 0 ? (
           <div>
@@ -107,7 +107,7 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
         )}
       </StatCard>
 
-      {/* Tarjeta 2: Mejor 1RM */}
+      {/* tarjeta 2 mejor 1rm */}
       <StatCard title="Mejor 1RM (Est.)">
         {pr1rm ? (() => {
           const converted1RM = convertWeight(pr1rm.estimated1RM, pr1rm.unit, currentUnit);
@@ -134,7 +134,7 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
         )}
       </StatCard>
 
-      {/* Tarjeta 3: Peso Máximo */}
+      {/* tarjeta 3 peso maximo */}
       <StatCard title="Peso Máximo">
         {prWeight ? (() => {
           const convertedWeight = convertWeight(prWeight.weight, prWeight.unit, currentUnit);
