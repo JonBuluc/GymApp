@@ -153,9 +153,6 @@ const WorkoutRecorder = () => {
         />
       </div>
 
-      {/* Panel de Estadísticas */}
-      <StatsPanel stats={stats} loading={loadingStats} />
-
       {/* Tabla de Series */}
       <div className="bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-700">
         <div className="flex justify-between items-center mb-4">
@@ -169,8 +166,11 @@ const WorkoutRecorder = () => {
         {/* Cabeceras */}
         <div className="grid grid-cols-12 gap-2 mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">
           <div className="col-span-1">#</div>
-          <div className="col-span-1">Warmup</div>
-          <div className="col-span-3">Peso ({unit})</div>
+          <div className="col-span-1">
+            <span className="hidden sm:inline">Warmup</span>
+            <span className="sm:hidden">W</span>
+          </div>
+          <div className="col-span-3">Peso <span className="text-gray-600">({unit})</span></div>
           <div className="col-span-2">Reps</div>
           <div className="col-span-2">RPE</div>
           <div className="col-span-2">1RM</div>
@@ -200,6 +200,9 @@ const WorkoutRecorder = () => {
 
         <button onClick={handleAddSet} className="mt-4 w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-blue-500 hover:text-blue-400 transition-all font-medium">+ Agregar Serie</button>
       </div>
+
+      {/* Panel de Estadísticas */}
+      <StatsPanel stats={stats} loading={loadingStats} currentUnit={unit} />
 
       <button onClick={handleSave} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95">GUARDAR ENTRENAMIENTO</button>
     </div>

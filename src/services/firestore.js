@@ -94,8 +94,29 @@ export const getExerciseStats = async (userId, exerciseName) => {
         .filter((d) => d.dateString === latestDate);
     }
 
-    const pr1rm = pr1rmSnap.empty ? null : pr1rmSnap.docs[0].data();
-    const prWeight = prWeightSnap.empty ? null : prWeightSnap.docs[0].data();
+    const pr1rmData = pr1rmSnap.empty ? null : pr1rmSnap.docs[0].data();
+    const prWeightData = prWeightSnap.empty ? null : prWeightSnap.docs[0].data();
+
+    const pr1rm = pr1rmData
+      ? {
+          weight: pr1rmData.weight,
+          reps: pr1rmData.reps,
+          estimated1RM: pr1rmData.estimated1RM,
+          unit: pr1rmData.unit,
+          dateString: pr1rmData.dateString,
+          setOrder: pr1rmData.setOrder,
+        }
+      : null;
+
+    const prWeight = prWeightData
+      ? {
+          weight: prWeightData.weight,
+          reps: prWeightData.reps,
+          unit: prWeightData.unit,
+          dateString: prWeightData.dateString,
+          setOrder: prWeightData.setOrder,
+        }
+      : null;
 
     return { lastSession, pr1rm, prWeight };
   } catch (error) {

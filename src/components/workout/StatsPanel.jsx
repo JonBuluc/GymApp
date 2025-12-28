@@ -9,7 +9,15 @@ const StatCard = ({ title, children }) => (
   </div>
 );
 
-const StatsPanel = ({ stats, loading }) => {
+const convertWeight = (weight, fromUnit, toUnit) => {
+  if (!weight) return 0;
+  if (fromUnit === toUnit) return weight;
+  if (fromUnit === 'kg' && toUnit === 'lb') return weight * 2.20462;
+  if (fromUnit === 'lb' && toUnit === 'kg') return weight / 2.20462;
+  return weight;
+};
+
+const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
   if (loading) {
     return (
       <div className="w-full p-8 text-center text-gray-400 animate-pulse">
@@ -62,37 +70,51 @@ const StatsPanel = ({ stats, loading }) => {
 
       {/* Tarjeta 2: Mejor 1RM */}
       <StatCard title="Mejor 1RM (Est.)">
-        {pr1rm ? (
-          <div className="text-center">
-            <div className="text-3xl font-bold text-white">
-              {Math.round(pr1rm.estimated1RM)}
-              <span className="text-lg text-gray-400 ml-1">{pr1rm.unit}</span>
+        {pr1rm ? (() => {
+          const converted1RM = convertWeight(pr1rm.estimated1RM, pr1rm.unit, currentUnit);
+          return (
+            <div className="text-center">
+              <div className="text-3xl font-bold text-white">
+                {Math.round(converted1RM)}
+                <span className="text-lg text-gray-400 ml-1">{currentUnit}</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-2 leading-tight">
+                Basado en: {pr1rm.weight}{pr1rm.unit} x {pr1rm.reps}
+                <br />
+                <span className="opacity-75">(Serie #{pr1rm.setOrder} el {pr1rm.dateString})</span>
+              </div>
             </div>
-            <div className="text-xs text-gray-500 mt-1">
-              Basado en: {pr1rm.weight}
-              {pr1rm.unit} x {pr1rm.reps}
-            </div>
-          </div>
-        ) : (
+          );
+        })() : (
           <span className="text-gray-500 italic text-center">N/A</span>
         )}
       </StatCard>
 
       {/* Tarjeta 3: Peso Máximo */}
       <StatCard title="Peso Máximo">
-        {prWeight ? (
-          <div className="text-center">
-            <div className="text-3xl font-bold text-green-400">
-              {prWeight.weight}
-              <span className="text-lg text-green-600 ml-1">
-                {prWeight.unit}
-              </span>
+        {prWeight ? (() => {
+          const convertedWeight = convertWeight(prWeight.weight, prWeight.unit, currentUnit);
+          // Redondear a 2 decimales si es conversión, o mantener original si es igual
+          const displayWeight = prWeight.unit === currentUnit 
+            ? prWeight.weight 
+            : parseFloat(convertedWeight.toFixed(2));
+
+          return (
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-400">
+                {displayWeight}
+                <span className="text-lg text-green-600 ml-1">
+                  {currentUnit}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 mt-2 leading-tight">
+                Original: {prWeight.weight}{prWeight.unit} x {prWeight.reps} reps
+                <br />
+                <span className="opacity-75">(Serie #{prWeight.setOrder} el {prWeight.dateString})</span>
+              </div>
             </div>
-            <div className="text-xs text-gray-500 mt-1">
-              x {prWeight.reps} reps
-            </div>
-          </div>
-        ) : (
+          );
+        })() : (
           <span className="text-gray-500 italic text-center">N/A</span>
         )}
       </StatCard>
