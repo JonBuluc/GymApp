@@ -17,6 +17,13 @@ const convertWeight = (weight, fromUnit, toUnit) => {
   return weight;
 };
 
+const getRpeColor = (rpe) => {
+  if (!rpe) return '';
+  if (rpe >= 9) return 'text-red-400';
+  if (rpe >= 7) return 'text-yellow-400';
+  return 'text-green-400';
+};
+
 const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
   if (loading) {
     return (
@@ -44,23 +51,55 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
     ? [...lastSession].sort((a, b) => a.setOrder - b.setOrder)
     : [];
 
+  // Pre-procesamiento de etiquetas para conteo correcto
+  let effectiveSetCount = 0;
+  const processedSession = sortedSession.map((set) => {
+    let displayLabel;
+    let labelColor;
+
+    if (set.isWarmup) {
+      displayLabel = "W";
+      labelColor = "text-sky-400 font-bold";
+    } else if (set.isDropSet) {
+      displayLabel = "↳";
+      labelColor = "text-gray-500";
+    } else {
+      effectiveSetCount++;
+      displayLabel = `#${effectiveSetCount}`;
+      labelColor = "text-gray-500";
+    }
+    return { ...set, displayLabel, labelColor };
+  });
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       {/* Tarjeta 1: Última Sesión */}
       <StatCard title="Última Sesión">
-        {sortedSession.length > 0 ? (
+        {processedSession.length > 0 ? (
           <div>
             <div className="text-sm text-blue-400 mb-2 font-medium">
-              {sortedSession[0].dateString}
+              {processedSession[0].dateString}
             </div>
             <ul className="space-y-1">
-              {sortedSession.map((set, index) => (
-                <li key={index} className="text-sm text-gray-300 font-mono">
-                  <span className="text-gray-500 mr-2">#{index + 1}</span>
-                  {set.weight}
-                  {set.unit} <span className="text-gray-500">x</span> {set.reps}
-                </li>
-              ))}
+              {processedSession.map((set, index) => {
+                const convertedWeight = convertWeight(set.weight, set.unit, currentUnit);
+                const displayWeight = set.unit === currentUnit 
+                  ? set.weight 
+                  : parseFloat(convertedWeight.toFixed(2));
+
+                return (
+                  <li key={index} className={`text-sm font-mono flex items-center ${set.isDropSet ? 'text-gray-400 ml-4' : 'text-gray-300'}`}>
+                    <span className={`mr-2 ${set.labelColor}`}>{set.displayLabel}</span>
+                    {displayWeight}
+                    {currentUnit} <span className="text-gray-500 mx-1">x</span> {set.reps}
+                    {set.rpe && (
+                      <span className={`ml-2 text-xs font-bold ${getRpeColor(set.rpe)}`}>
+                        @ RPE {set.rpe}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : (
@@ -82,6 +121,11 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
                 Basado en: {pr1rm.weight}{pr1rm.unit} x {pr1rm.reps}
                 <br />
                 <span className="opacity-75">(Serie #{pr1rm.setOrder} el {pr1rm.dateString})</span>
+                {pr1rm.rpe && (
+                  <span className={`block mt-1 font-bold ${getRpeColor(pr1rm.rpe)}`}>
+                    RPE {pr1rm.rpe}
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -111,6 +155,11 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
                 Original: {prWeight.weight}{prWeight.unit} x {prWeight.reps} reps
                 <br />
                 <span className="opacity-75">(Serie #{prWeight.setOrder} el {prWeight.dateString})</span>
+                {prWeight.rpe && (
+                  <span className={`block mt-1 font-bold ${getRpeColor(prWeight.rpe)}`}>
+                    RPE {prWeight.rpe}
+                  </span>
+                )}
               </div>
             </div>
           );

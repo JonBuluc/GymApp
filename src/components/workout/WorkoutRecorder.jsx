@@ -11,7 +11,7 @@ const WorkoutRecorder = () => {
   const [muscleGroup, setMuscleGroup] = useState('');
   const [exercise, setExercise] = useState('');
   const [unit, setUnit] = useState('kg');
-  const [sets, setSets] = useState([{ id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false }]);
+  const [sets, setSets] = useState([{ id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false, isDropSet: false }]);
   
   // Estado de datos externos
   const [availableMuscleGroups, setAvailableMuscleGroups] = useState([]);
@@ -71,7 +71,7 @@ const WorkoutRecorder = () => {
   };
   
   const handleAddSet = () => {
-    setSets(prev => [...prev, { id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false }]);
+    setSets(prev => [...prev, { id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false, isDropSet: false }]);
   };
 
   const handleRemoveSet = (id) => {
@@ -82,7 +82,9 @@ const WorkoutRecorder = () => {
 
   // Procesamiento de series (Orden y 1RM)
   const processedSets = useMemo(() => {
-    let effectiveCounter = 1;
+    let visualCounter = 1;
+    let dbCounter = 1;
+
     return sets.map((set, index) => {
       const weight = parseFloat(set.weight) || 0;
       const reps = parseInt(set.reps, 10) || 0;
@@ -91,11 +93,27 @@ const WorkoutRecorder = () => {
       // Regla: Solo el index 0 puede ser warmup visualmente
       const isWarmup = index === 0 && set.isWarmup;
       
+      let displayOrder;
+      let setOrder;
+
+      if (isWarmup) {
+        displayOrder = 'W';
+        setOrder = 0;
+      } else {
+        setOrder = dbCounter++;
+        // Si es Drop Set y no es la primera fila absoluta (aunque la regla visual es index > 0)
+        if (set.isDropSet && index > 0) {
+          displayOrder = '↳';
+        } else {
+          displayOrder = visualCounter++;
+        }
+      }
+
       return {
         ...set,
         isWarmup,
-        setOrder: isWarmup ? 0 : effectiveCounter++,
-        displayOrder: isWarmup ? 'W' : (effectiveCounter - 1),
+        setOrder,
+        displayOrder,
         calculated1RM: estimated1RM
       };
     });
@@ -125,7 +143,7 @@ const WorkoutRecorder = () => {
       await saveWorkoutBatch(workoutData);
       alert("Entrenamiento guardado exitosamente.");
       // Resetear sets
-      setSets([{ id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false }]);
+      setSets([{ id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false, isDropSet: false }]);
       // Recargar stats
       const newStats = await getExerciseStats(user.uid, exercise);
       setStats(newStats);
@@ -181,10 +199,24 @@ const WorkoutRecorder = () => {
         <div className="space-y-2">
           {processedSets.map((set, index) => (
             <div key={set.id} className="grid grid-cols-12 gap-2 items-center">
-              <div className="col-span-1 text-center font-mono font-bold text-blue-400">{set.displayOrder}</div>
+              <div className={`col-span-1 text-center font-mono font-bold ${set.displayOrder === 'W' ? 'text-orange-500' : 'text-blue-400'}`}>
+                {set.displayOrder}
+              </div>
               <div className="col-span-1 flex justify-center">
-                {index === 0 && (
+                {index === 0 ? (
                   <input type="checkbox" checked={set.isWarmup} onChange={(e) => handleSetChange(set.id, 'isWarmup', e.target.checked)} className="w-5 h-5 rounded border-gray-600 text-blue-600 bg-gray-700" />
+                ) : (
+                  <button 
+                    onClick={() => handleSetChange(set.id, 'isDropSet', !set.isDropSet)}
+                    className={`p-1 rounded-full transition-all ${set.isDropSet ? 'text-blue-400 bg-blue-900/30' : 'text-gray-600 hover:text-gray-400 hover:bg-gray-700'}`}
+                    title="Marcar como Drop Set"
+                  >
+                    {set.isDropSet ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M12 2.25c0 0-8.25 6-8.25 12.75a8.25 8.25 0 0 0 16.5 0C20.25 8.25 12 2.25 12 2.25z" clipRule="evenodd" /></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2.25c0 0-8.25 6-8.25 12.75a8.25 8.25 0 0 0 16.5 0C20.25 8.25 12 2.25 12 2.25z" /></svg>
+                    )}
+                  </button>
                 )}
               </div>
               <div className="col-span-3"><input type="number" value={set.weight} onChange={(e) => handleSetChange(set.id, 'weight', e.target.value)} placeholder="0" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
@@ -201,10 +233,10 @@ const WorkoutRecorder = () => {
         <button onClick={handleAddSet} className="mt-4 w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-blue-500 hover:text-blue-400 transition-all font-medium">+ Agregar Serie</button>
       </div>
 
+      <button onClick={handleSave} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95">GUARDAR ENTRENAMIENTO</button>
+
       {/* Panel de Estadísticas */}
       <StatsPanel stats={stats} loading={loadingStats} currentUnit={unit} />
-
-      <button onClick={handleSave} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95">GUARDAR ENTRENAMIENTO</button>
     </div>
   );
 };

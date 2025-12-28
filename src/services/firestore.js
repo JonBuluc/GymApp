@@ -33,6 +33,7 @@ export const saveWorkoutBatch = async (workoutData) => {
       reps: parseInt(set.reps, 10) || 0,
       rpe: set.rpe ? parseFloat(set.rpe) : null,
       isWarmup: set.isWarmup,
+      isDropSet: set.isDropSet || false,
       setOrder: set.setOrder,
       // calculo estimado de 1rm
       estimated1RM: (parseFloat(set.weight) || 0) * (1 + (parseInt(set.reps, 10) || 0) / 30),
@@ -90,7 +91,7 @@ export const getExerciseStats = async (userId, exerciseName) => {
     if (!lastSessionSnap.empty) {
       const latestDate = lastSessionSnap.docs[0].data().dateString;
       lastSession = lastSessionSnap.docs
-        .map((d) => d.data())
+        .map((d) => ({ ...d.data(), isDropSet: !!d.data().isDropSet }))
         .filter((d) => d.dateString === latestDate);
     }
 
@@ -105,6 +106,7 @@ export const getExerciseStats = async (userId, exerciseName) => {
           unit: pr1rmData.unit,
           dateString: pr1rmData.dateString,
           setOrder: pr1rmData.setOrder,
+          rpe: pr1rmData.rpe,
         }
       : null;
 
@@ -115,6 +117,7 @@ export const getExerciseStats = async (userId, exerciseName) => {
           unit: prWeightData.unit,
           dateString: prWeightData.dateString,
           setOrder: prWeightData.setOrder,
+          rpe: prWeightData.rpe,
         }
       : null;
 
