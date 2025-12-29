@@ -4,7 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import LoginPage from "./pages/LoginPage";
-import Navbar from "./components/layout/Navbar";
+import Navbar from "./components/ui/Navbar";
 import HistoryPage from "./pages/HistoryPage";
 import ProgressPage from "./pages/ProgressPage";
 
@@ -12,34 +12,38 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Navbar />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route 
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/history" 
-            element={
-              <ProtectedRoute>
-                <HistoryPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/progress" 
-            element={
-              <ProtectedRoute>
-                <ProgressPage />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
+        <div className="min-h-screen bg-gray-900 text-white">
+          <Navbar />
+          <main className="pt-16">
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route 
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/historial" 
+                element={
+                  <ProtectedRoute>
+                    <HistoryPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/progreso" 
+                element={
+                  <ProtectedRoute>
+                    <ProgressPage />
+                  </ProtectedRoute>
+                } 
+              />
+            </Routes>
+          </main>
+        </div>
       </Router>
     </AuthProvider>
   );

@@ -42,9 +42,9 @@ const Navbar = () => {
             <div className="text-white font-bold text-lg hidden sm:block">Gym App</div>
             <button
               onClick={logout}
-              className="text-sm text-red-400 hover:text-red-300 transition-colors font-medium flex items-center gap-1"
+              className="text-sm text-gray-400 hover:text-white transition-colors font-medium flex items-center gap-1"
             >
-              Salir <span className="text-gray-600 text-xs hidden xs:inline">({user?.displayName?.split(" ")[0] || "Usuario"})</span>
+              Salir <span className="text-xs">({user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || "Usuario"})</span>
             </button>
           </div>
         </div>

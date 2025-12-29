@@ -4,6 +4,7 @@ import { getAnalyticsData, getMuscleGroups, getExerciseCatalog } from '../servic
 import MultiSelect from '../components/ui/MultiSelect';
 import WeekPicker from '../components/ui/WeekPicker';
 import { downloadAsPNG } from '../utils/downloadImage';
+import MarcaAgua from '../components/ui/MarcaAgua';
 import {
   LineChart,
   Line,
@@ -406,28 +407,24 @@ const ProgressPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
       <div ref={fullPageRef} className="max-w-4xl mx-auto p-4 space-y-6 pb-20">
-        {/* encabezado de usuario para captura */}
-        <div className="border-b border-gray-800 pb-2">
-          <h1 className="text-lg font-medium text-gray-400">
-            Progreso de: <span className="text-blue-400">{user?.displayName || user?.email}</span>
-          </h1>
-        </div>
-
         {/* header */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-white">Progreso</h1>
-            <button 
-              onClick={() => downloadAsPNG(fullPageRef, 'dashboard_completo')}
-              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-lg transition-all active:scale-95 flex items-center gap-2"
-            >
-              📸 Guardar Dashboard
-            </button>
+        <div className="flex flex-col md:flex-row justify-between items-center bg-gray-800 p-4 rounded-xl border border-gray-700">
+          <div className="flex items-center mb-4 md:mb-0">
+            <h1 className="text-2xl font-bold text-white pt-[2px]">Progreso</h1>
           </div>
           
           <div className="flex gap-3">
+            <button 
+              onClick={() => downloadAsPNG(fullPageRef, 'dashboard_completo')}
+              className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors border border-gray-700"
+              title="Descargar Dashboard Completo"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+              </svg>
+            </button>
             <div className="flex bg-gray-700 rounded-lg p-1">
               <button onClick={() => setUnitMode('kg')} className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${unitMode === 'kg' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>KG</button>
               <button onClick={() => setUnitMode('lb')} className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${unitMode === 'lb' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>LB</button>
@@ -455,26 +452,29 @@ const ProgressPage = () => {
         </div>
 
         {/* grafica */}
-        <div ref={mainChartRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg">
-          <div className="flex justify-between items-center mb-4">
+        <div ref={mainChartRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg relative">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-300 leading-none pt-[2px]">Evolución de Cargas</h3>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-gray-300">Evolución de Cargas</h3>
+              <div className="flex bg-gray-700 rounded-lg p-1">
+                <button onClick={() => setMetricMode('1rm')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${metricMode === '1rm' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>1RM Estimado</button>
+                <button onClick={() => setMetricMode('max_weight')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${metricMode === 'max_weight' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Peso Máximo</button>
+              </div>
               <button 
                 onClick={() => downloadAsPNG(mainChartRef, 'evolucion_cargas')}
                 className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors"
-                title="Guardar imagen"
+                title="Descargar gráfica"
               >
-                📸
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                </svg>
               </button>
-            </div>
-            <div className="flex bg-gray-700 rounded-lg p-1">
-              <button onClick={() => setMetricMode('1rm')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${metricMode === '1rm' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>1RM Estimado</button>
-              <button onClick={() => setMetricMode('max_weight')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${metricMode === 'max_weight' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Peso Máximo</button>
             </div>
           </div>
 
           {/* Cambia el valor dentro de los corchetes [] para ajustar la altura (ej: h-[600px]) */}
-          <div className="h-[550px] w-full overflow-hidden">
+          <div className="h-[400px] md:h-[550px] w-full overflow-hidden">
           {loading ? (
             <div className="h-full flex items-center justify-center text-gray-400 animate-pulse">Cargando datos...</div>
           ) : chartData.length > 0 ? (
@@ -516,32 +516,35 @@ const ProgressPage = () => {
               ))}
             </div>
           )}
+          <MarcaAgua userName={user?.displayName || user?.email} />
         </div>
 
         {/* Gráficas Secundarias */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Volumen Semanal */}
-          <div ref={weeklyVolumeRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg h-[300px]">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-gray-300">Volumen Semanal</h3>
-                <button 
-                  onClick={() => downloadAsPNG(weeklyVolumeRef, 'volumen_semanal')}
-                  className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors"
-                  title="Guardar imagen"
-                >
-                  📸
-                </button>
-              </div>
+          <div ref={weeklyVolumeRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg h-[350px] md:h-[400px] flex flex-col relative">
+            <div className="flex justify-between items-center mb-4 flex-shrink-0">
+              <h3 className="text-lg font-bold text-gray-300 pt-[2px]">Volumen Semanal</h3>
               <div className="flex items-center gap-2">
                 <WeekPicker 
                   selectedDate={volumeSelectedDate}
                   onChange={(date) => setVolumeSelectedDate(date.toISOString().split('T')[0])}
                 />
+                <button 
+                  onClick={() => downloadAsPNG(weeklyVolumeRef, 'volumen_semanal')}
+                  className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors"
+                  title="Descargar gráfica"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                  </svg>
+                </button>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height="90%">
+            <div className="flex-1 w-full">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyVolumeData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis 
@@ -564,22 +567,15 @@ const ProgressPage = () => {
                 <Bar dataKey="volume" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
+            <MarcaAgua userName={user?.displayName || user?.email} />
           </div>
 
           {/* Equilibrio Muscular */}
-          <div ref={radarRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg h-[300px]">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-gray-300">Equilibrio Muscular</h3>
-                <button 
-                  onClick={() => downloadAsPNG(radarRef, 'equilibrio_muscular')}
-                  className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors"
-                  title="Guardar imagen"
-                >
-                  📸
-                </button>
-              </div>
-              <div className="flex gap-2">
+          <div ref={radarRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg h-[350px] md:h-[400px] flex flex-col relative">
+            <div className="flex justify-between items-center mb-4 flex-shrink-0">
+              <h3 className="text-lg font-bold text-gray-300 pt-[2px]">Equilibrio Muscular</h3>
+              <div className="flex gap-2 items-center">
                 <select
                   value={radarTimeRange}
                   onChange={(e) => setRadarTimeRange(e.target.value)}
@@ -604,9 +600,20 @@ const ProgressPage = () => {
                     Volumen
                   </button>
                 </div>
+                <button 
+                  onClick={() => downloadAsPNG(radarRef, 'equilibrio_muscular')}
+                  className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors"
+                  title="Descargar gráfica"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                  </svg>
+                </button>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height="90%">
+            <div className="flex-1 w-full">
+            <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="70%" data={muscleBalanceData}>
                 <PolarGrid stroke="#374151" />
                 <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 11 }} />
@@ -621,47 +628,55 @@ const ProgressPage = () => {
                 <Tooltip contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }} />
               </RadarChart>
             </ResponsiveContainer>
+            </div>
+            <MarcaAgua userName={user?.displayName || user?.email} />
           </div>
         </div>
 
         {/* Constancia (Matriz Mensual Partida) */}
-        <div ref={heatmapRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg">
+        <div ref={heatmapRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg relative">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-gray-300">Constancia Mensual</h3>
+            <h3 className="text-lg font-bold text-gray-300 pt-[2px]">Constancia Mensual</h3>
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="flex-1 md:w-72">
+                <MultiSelect 
+                  options={availableMonths} 
+                  selected={constancyMonths} 
+                  onChange={setConstancyMonths} 
+                  placeholder="Seleccionar Meses..." 
+                />
+              </div>
               <button 
                 onClick={() => downloadAsPNG(heatmapRef, 'constancia_mensual')}
                 className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors"
-                title="Guardar imagen"
+                title="Descargar gráfica"
               >
-                📸
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                </svg>
               </button>
-            </div>
-            <div className="w-full md:w-72">
-              <MultiSelect 
-                options={availableMonths} 
-                selected={constancyMonths} 
-                onChange={setConstancyMonths} 
-                placeholder="Seleccionar Meses..." 
-              />
             </div>
           </div>
           
           <div className="overflow-x-auto pb-2">
-            <div className="flex gap-2 min-w-max">
+            <div className="flex min-w-max">
               {/* Columna de Etiquetas de Fila */}
-              <div className="flex flex-col gap-[2px] pt-6">
-                {Array.from({ length: 16 }).map((_, i) => (
-                  <div key={i} className="h-7 flex items-center justify-end text-xs text-gray-500 font-mono pr-2">
-                    {i === 15 ? '31' : `${i + 1}/${i + 16}`}
-                  </div>
-                ))}
+              <div className="flex flex-col mr-2">
+                <div className="h-6 mb-1" /> {/* Espaciador Header alineado con meses */}
+                <div className="flex flex-col gap-[2px]">
+                  {Array.from({ length: 16 }).map((_, i) => (
+                    <div key={i} className="h-7 w-8 flex items-center justify-end text-[10px] text-gray-500 font-mono leading-none">
+                      {i === 15 ? '31' : `${i + 1}/${i + 16}`}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Columnas de Meses */}
-              {matrixData.map((monthData) => (
-                <div key={monthData.monthStr} className="flex flex-col gap-1">
-                  <div className="h-6 text-center text-[10px] font-bold text-gray-500 uppercase tracking-tighter truncate px-1">
+              {matrixData.map((monthData, mIdx) => (
+                <div key={monthData.monthStr} className={`flex flex-col ${mIdx !== matrixData.length - 1 ? 'mr-2' : ''}`}>
+                  <div className="h-6 text-center text-[10px] font-bold text-gray-500 uppercase tracking-tighter px-1 mb-1 leading-none flex items-center justify-center">
                     {monthData.monthStr.split('-')[0].slice(-2)}-{monthData.monthStr.split('-')[1]}
                   </div>
                   <div className="grid grid-cols-2 gap-[2px]">
@@ -699,6 +714,7 @@ const ProgressPage = () => {
               ))}
             </div>
           </div>
+          <MarcaAgua userName={user?.displayName || user?.email} />
         </div>
 
         {/* Tooltip Personalizado */}
@@ -720,8 +736,8 @@ const ProgressPage = () => {
             </div>
           </div>
         )}
+        <MarcaAgua userName={user?.displayName || user?.email} />
       </div>
-    </div>
   );
 };
 

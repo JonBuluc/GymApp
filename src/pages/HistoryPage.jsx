@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getWorkoutHistory, getMuscleGroups, getExerciseCatalog, updateWorkoutSet, deleteWorkoutSet } from '../services/firestore';
 import Combobox from '../components/ui/Combobox';
 import EditSetModal from '../components/workout/EditSetModal';
+import { downloadAsPNG } from '../utils/downloadImage';
+import MarcaAgua from '../components/ui/MarcaAgua';
 
 // funcion auxiliar para recalcular totales de sesion
 const recalculateSession = (session, updatedExercises) => {
@@ -33,6 +35,7 @@ const recalculateSession = (session, updatedExercises) => {
 
 const HistoryPage = () => {
   const { user } = useAuth();
+  const sessionRefs = useRef(new Map());
   const [historyData, setHistoryData] = useState([]);
   const [displayUnit, setDisplayUnit] = useState('kg');
   const [isLoading, setIsLoading] = useState(false);
@@ -193,7 +196,6 @@ const HistoryPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
     <div className="max-w-3xl mx-auto p-4 space-y-6 pb-20">
       {/* header */}
       <div className="flex flex-col space-y-4 bg-gray-800 p-4 rounded-xl border border-gray-700">
@@ -283,7 +285,14 @@ const HistoryPage = () => {
           });
 
           return (
-            <div key={`${session.date}-${idx}`} className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
+            <div 
+              key={session.date} 
+              ref={(el) => {
+                if (el) sessionRefs.current.set(session.date, el);
+                else sessionRefs.current.delete(session.date);
+              }}
+              className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg relative"
+            >
               {/* card header */}
               <div className="bg-gray-750 p-4 border-b border-gray-700 flex justify-between items-start">
                 <div>
@@ -299,6 +308,16 @@ const HistoryPage = () => {
                     ))}
                   </div>
                 </div>
+                <button 
+                  onClick={() => downloadAsPNG({ current: sessionRefs.current.get(session.date) }, 'entreno_' + session.date)}
+                  className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors"
+                  title="Descargar sesión"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                  </svg>
+                </button>
               </div>
 
               {/* metrics */}
@@ -411,6 +430,7 @@ const HistoryPage = () => {
                   );
                 })}
               </div>
+              <MarcaAgua userName={user?.displayName || user?.email} />
             </div>
           );
         })}
@@ -456,7 +476,6 @@ const HistoryPage = () => {
         onDelete={handleDeleteSet} 
         initialData={editingSet} 
       />
-    </div>
     </div>
   );
 };
