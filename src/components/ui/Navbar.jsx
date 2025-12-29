@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useHelp } from '../../context/HelpContext';
 import EditProfileModal from '../../services/EditProfileModal';
 import Logo from '../../assets/Logo.svg';
+import HelpOverlay from './HelpOverlay';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { isHelpActive, toggleHelp, setIsHelpActive } = useHelp();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
@@ -40,7 +43,18 @@ const Navbar = () => {
         </div>
 
         {/* Derecha: Usuario */}
-        <div className="relative">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleHelp}
+            className="p-2 text-gray-400 hover:text-white transition-colors rounded-full"
+            title="Ayuda"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 17.25h.008v.008H12v-.008z" />
+            </svg>
+          </button>
+
+          <div className="relative">
           <button 
             onClick={toggleUserMenu}
             className="flex items-center justify-center h-10 w-10 rounded-full bg-gray-800 border border-gray-700 text-blue-400 font-bold hover:border-blue-500 transition-all"
@@ -92,6 +106,7 @@ const Navbar = () => {
               </div>
             </>
           )}
+          </div>
         </div>
       </nav>
 
@@ -139,6 +154,12 @@ const Navbar = () => {
           </div>
         </aside>
       </div>
+
+      {/* overlay de ayuda */}
+      <HelpOverlay 
+        isOpen={isHelpActive} 
+        onClose={() => setIsHelpActive(false)} 
+      />
 
       {/* Modal de Edición */}
       <EditProfileModal 

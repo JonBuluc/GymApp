@@ -1,4 +1,5 @@
 import React from "react";
+import HelpMarker from "../ui/HelpMarker";
 
 const StatCard = ({ title, children }) => (
   <div className="bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700 flex flex-col h-full">
@@ -74,6 +75,7 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       {/* tarjeta 1 ultima sesion */}
+      <HelpMarker text="Resumen de tu último entrenamiento de este ejercicio">
       <StatCard title="Última Sesión">
         {processedSession.length > 0 ? (
           <div>
@@ -109,8 +111,10 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
           <span className="text-gray-500 italic">No disponible</span>
         )}
       </StatCard>
+      </HelpMarker>
 
       {/* tarjeta 2 mejor 1rm */}
+      <HelpMarker text="Tu récord personal estimado de 1 repetición máxima">
       <StatCard title="Mejor 1RM (Est.)">
         {pr1rm ? (() => {
           const converted1RM = convertWeight(pr1rm.estimated1RM, pr1rm.unit, currentUnit);
@@ -136,8 +140,10 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
           <span className="text-gray-500 italic text-center">N/A</span>
         )}
       </StatCard>
+      </HelpMarker>
 
       {/* tarjeta 3 peso maximo */}
+      <HelpMarker text="El peso más alto que has levantado en este ejercicio">
       <StatCard title="Peso Máximo">
         {prWeight ? (() => {
           const convertedWeight = convertWeight(prWeight.weight, prWeight.unit, currentUnit);
@@ -170,6 +176,7 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
           <span className="text-gray-500 italic text-center">N/A</span>
         )}
       </StatCard>
+      </HelpMarker>
     </div>
   );
 };

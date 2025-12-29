@@ -5,6 +5,7 @@ import MultiSelect from '../components/ui/MultiSelect';
 import WeekPicker from '../components/ui/WeekPicker';
 import { downloadAsPNG } from '../utils/downloadImage';
 import MarcaAgua from '../components/ui/MarcaAgua';
+import HelpMarker from '../components/ui/HelpMarker';
 import {
   LineChart,
   Line,
@@ -452,6 +453,7 @@ const ProgressPage = () => {
         </div>
 
         {/* grafica */}
+        <HelpMarker text="Visualiza tu progreso de fuerza en el tiempo">
         <div ref={mainChartRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg relative">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-gray-300 leading-none pt-[2px]">Evolución de Cargas</h3>
@@ -518,11 +520,13 @@ const ProgressPage = () => {
           )}
           <MarcaAgua userName={user?.displayName || user?.email} />
         </div>
+        </HelpMarker>
 
         {/* Gráficas Secundarias */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Volumen Semanal */}
+          <HelpMarker text="Volumen total levantado por día">
           <div ref={weeklyVolumeRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg h-[350px] md:h-[400px] flex flex-col relative">
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-300 pt-[2px]">Volumen Semanal</h3>
@@ -570,8 +574,10 @@ const ProgressPage = () => {
             </div>
             <MarcaAgua userName={user?.displayName || user?.email} />
           </div>
+          </HelpMarker>
 
           {/* Equilibrio Muscular */}
+          <HelpMarker text="Distribución de trabajo por grupo muscular">
           <div ref={radarRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg h-[350px] md:h-[400px] flex flex-col relative">
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-300 pt-[2px]">Equilibrio Muscular</h3>
@@ -631,9 +637,11 @@ const ProgressPage = () => {
             </div>
             <MarcaAgua userName={user?.displayName || user?.email} />
           </div>
+          </HelpMarker>
         </div>
 
         {/* Constancia (Matriz Mensual Partida) */}
+        <HelpMarker text="Mapa de calor de tus días de entrenamiento">
         <div ref={heatmapRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg relative">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h3 className="text-lg font-bold text-gray-300 pt-[2px]">Constancia Mensual</h3>
@@ -716,6 +724,7 @@ const ProgressPage = () => {
           </div>
           <MarcaAgua userName={user?.displayName || user?.email} />
         </div>
+        </HelpMarker>
 
         {/* Tooltip Personalizado */}
         {tooltipData && (

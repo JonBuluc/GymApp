@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { HelpProvider } from "./context/HelpContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import LoginPage from "./pages/LoginPage";
@@ -11,6 +12,7 @@ import ProgressPage from "./pages/ProgressPage";
 function App() {
   return (
     <AuthProvider>
+      <HelpProvider>
       <Router>
         <div className="min-h-screen bg-gray-900 text-white">
           <Navbar />
@@ -45,6 +47,7 @@ function App() {
           </main>
         </div>
       </Router>
+      </HelpProvider>
     </AuthProvider>
   );
 }

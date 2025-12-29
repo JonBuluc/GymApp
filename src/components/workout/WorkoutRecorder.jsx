@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { saveWorkoutBatch, getExerciseStats, getExerciseCatalog, getMuscleGroups } from '../../services/firestore';
 import Combobox from '../ui/Combobox';
 import StatsPanel from './StatsPanel';
+import HelpMarker from '../ui/HelpMarker';
 
 const WorkoutRecorder = () => {
   const { user } = useAuth();
@@ -159,38 +160,48 @@ const WorkoutRecorder = () => {
     <div className="max-w-3xl mx-auto p-4 space-y-6">
       {/* selector de fecha */}
       <div className="flex justify-end">
-        <input 
-          type="date" 
-          value={workoutDate} 
-          onChange={(e) => setWorkoutDate(e.target.value)}
-          className="bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ colorScheme: 'dark' }}
-        />
+        <HelpMarker text="Fecha del entrenamiento" className="w-auto">
+          <input 
+            type="date" 
+            value={workoutDate} 
+            onChange={(e) => setWorkoutDate(e.target.value)}
+            className="bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ colorScheme: 'dark' }}
+          />
+        </HelpMarker>
       </div>
 
       {/* selectores */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Combobox
-          value={muscleGroup}
-          onChange={(val) => { setMuscleGroup(val); setExercise(''); }}
-          options={availableMuscleGroups}
-          placeholder="Grupo Muscular"
-        />
-        <Combobox
-          value={exercise}
-          onChange={setExercise}
-          options={exerciseCatalog}
-          placeholder="Ejercicio"
-        />
+        <HelpMarker text="Grupo muscular principal">
+          <Combobox
+            value={muscleGroup}
+            onChange={(val) => { setMuscleGroup(val); setExercise(''); }}
+            options={availableMuscleGroups}
+            placeholder="Grupo Muscular"
+          />
+        </HelpMarker>
+        <HelpMarker text="Ejercicio">
+          <Combobox
+            value={exercise}
+            onChange={setExercise}
+            options={exerciseCatalog}
+            placeholder="Ejercicio"
+          />
+        </HelpMarker>
       </div>
 
       {/* tabla de series */}
       <div className="bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-700">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-white">Series</h2>
-          <div className="flex bg-gray-700 rounded-lg p-1">
-            <button onClick={() => setUnit('kg')} className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${unit === 'kg' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>KG</button>
-            <button onClick={() => setUnit('lb')} className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${unit === 'lb' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>LB</button>
+          <div className="w-auto">
+            <HelpMarker text="Unidad de peso" className="w-auto">
+              <div className="flex bg-gray-700 rounded-lg p-1">
+                <button onClick={() => setUnit('kg')} className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${unit === 'kg' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>KG</button>
+                <button onClick={() => setUnit('lb')} className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${unit === 'lb' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>LB</button>
+              </div>
+            </HelpMarker>
           </div>
         </div>
 
@@ -217,36 +228,99 @@ const WorkoutRecorder = () => {
               </div>
               <div className="col-span-1 flex justify-center">
                 {index === 0 ? (
-                  <input type="checkbox" checked={set.isWarmup} onChange={(e) => handleSetChange(set.id, 'isWarmup', e.target.checked)} className="w-5 h-5 rounded border-gray-600 text-blue-600 bg-gray-700" />
+                  <HelpMarker text="Calentamiento" className="flex justify-center">
+                    <input type="checkbox" checked={set.isWarmup} onChange={(e) => handleSetChange(set.id, 'isWarmup', e.target.checked)} className="w-5 h-5 rounded border-gray-600 text-blue-600 bg-gray-700" />
+                  </HelpMarker>
                 ) : (
-                  <button 
-                    onClick={() => handleSetChange(set.id, 'isDropSet', !set.isDropSet)}
-                    className={`p-1 rounded-full transition-all ${set.isDropSet ? 'text-blue-400 bg-blue-900/30' : 'text-gray-600 hover:text-gray-400 hover:bg-gray-700'}`}
-                    title="Marcar como Drop Set"
-                  >
-                    {set.isDropSet ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M12 2.25c0 0-8.25 6-8.25 12.75a8.25 8.25 0 0 0 16.5 0C20.25 8.25 12 2.25 12 2.25z" clipRule="evenodd" /></svg>
+                  <div className="flex justify-center w-full">
+                    {index === 1 ? (
+                      <HelpMarker text="Drop Set" className="flex justify-center">
+                        <button 
+                          onClick={() => handleSetChange(set.id, 'isDropSet', !set.isDropSet)}
+                          className={`p-1 rounded-full transition-all ${set.isDropSet ? 'text-blue-400 bg-blue-900/30' : 'text-gray-600 hover:text-gray-400 hover:bg-gray-700'}`}
+                          title="Marcar como Drop Set"
+                        >
+                          {set.isDropSet ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M12 2.25c0 0-8.25 6-8.25 12.75a8.25 8.25 0 0 0 16.5 0C20.25 8.25 12 2.25 12 2.25z" clipRule="evenodd" /></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2.25c0 0-8.25 6-8.25 12.75a8.25 8.25 0 0 0 16.5 0C20.25 8.25 12 2.25 12 2.25z" /></svg>
+                          )}
+                        </button>
+                      </HelpMarker>
                     ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2.25c0 0-8.25 6-8.25 12.75a8.25 8.25 0 0 0 16.5 0C20.25 8.25 12 2.25 12 2.25z" /></svg>
+                      <button 
+                        onClick={() => handleSetChange(set.id, 'isDropSet', !set.isDropSet)}
+                        className={`p-1 rounded-full transition-all ${set.isDropSet ? 'text-blue-400 bg-blue-900/30' : 'text-gray-600 hover:text-gray-400 hover:bg-gray-700'}`}
+                      >
+                        {set.isDropSet ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M12 2.25c0 0-8.25 6-8.25 12.75a8.25 8.25 0 0 0 16.5 0C20.25 8.25 12 2.25 12 2.25z" clipRule="evenodd" /></svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2.25c0 0-8.25 6-8.25 12.75a8.25 8.25 0 0 0 16.5 0C20.25 8.25 12 2.25 12 2.25z" /></svg>
+                        )}
+                      </button>
                     )}
-                  </button>
+                  </div>
                 )}
               </div>
-              <div className="col-span-3"><input type="number" value={set.weight} onChange={(e) => handleSetChange(set.id, 'weight', e.target.value)} placeholder="0" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-              <div className="col-span-2"><input type="number" value={set.reps} onChange={(e) => handleSetChange(set.id, 'reps', e.target.value)} placeholder="0" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-              <div className="col-span-2"><input type="number" value={set.rpe} onChange={(e) => handleSetChange(set.id, 'rpe', e.target.value)} placeholder="-" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-              <div className="col-span-2 text-center font-mono text-gray-300 text-sm">{set.calculated1RM > 0 ? Math.round(set.calculated1RM) : '-'}</div>
+              <div className="col-span-3">
+                {index === 0 ? (
+                  <HelpMarker text="Peso">
+                    <input type="number" value={set.weight} onChange={(e) => handleSetChange(set.id, 'weight', e.target.value)} placeholder="0" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </HelpMarker>
+                ) : (
+                  <input type="number" value={set.weight} onChange={(e) => handleSetChange(set.id, 'weight', e.target.value)} placeholder="0" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                )}
+              </div>
+              <div className="col-span-2">
+                {index === 0 ? (
+                  <HelpMarker text="Reps">
+                    <input type="number" value={set.reps} onChange={(e) => handleSetChange(set.id, 'reps', e.target.value)} placeholder="0" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </HelpMarker>
+                ) : (
+                  <input type="number" value={set.reps} onChange={(e) => handleSetChange(set.id, 'reps', e.target.value)} placeholder="0" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                )}
+              </div>
+              <div className="col-span-2">
+                {index === 0 ? (
+                  <HelpMarker text="Escala de Esfuerzo (1-10). 10 = Fallo muscular, 8 = 2 reps en reserva." position="bottom">
+                    <input type="number" value={set.rpe} onChange={(e) => handleSetChange(set.id, 'rpe', e.target.value)} placeholder="-" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </HelpMarker>
+                ) : (
+                  <input type="number" value={set.rpe} onChange={(e) => handleSetChange(set.id, 'rpe', e.target.value)} placeholder="-" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                )}
+              </div>
+              <div className="col-span-2 text-center font-mono text-gray-300 text-sm">
+                {index === 0 ? (
+                  <HelpMarker text="Repetición Máxima Estimada. Peso teórico máximo para 1 repetición.">
+                    <span>{set.calculated1RM > 0 ? Math.round(set.calculated1RM) : '-'}</span>
+                  </HelpMarker>
+                ) : (
+                  set.calculated1RM > 0 ? Math.round(set.calculated1RM) : '-'
+                )}
+              </div>
               <div className="col-span-1 flex justify-center">
-                {sets.length > 1 && <button onClick={() => handleRemoveSet(set.id)} className="text-gray-500 hover:text-red-500">✕</button>}
+                {sets.length > 1 && (
+                  index === 0 ? (
+                    <HelpMarker text="Eliminar serie" className="flex justify-center" position="bottom">
+                      <button onClick={() => handleRemoveSet(set.id)} className="text-gray-500 hover:text-red-500">✕</button>
+                    </HelpMarker>
+                  ) : (
+                    <button onClick={() => handleRemoveSet(set.id)} className="text-gray-500 hover:text-red-500">✕</button>
+                  )
+                )}
               </div>
             </div>
           ))}
         </div>
 
-        <button onClick={handleAddSet} className="mt-4 w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-blue-500 hover:text-blue-400 transition-all font-medium">+ Agregar Serie</button>
+        <HelpMarker text="Añadir nueva serie" position="bottom">
+          <button onClick={handleAddSet} className="mt-4 w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-blue-500 hover:text-blue-400 transition-all font-medium">+ Agregar Serie</button>
+        </HelpMarker>
       </div>
 
-      <button onClick={handleSave} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95">GUARDAR ENTRENAMIENTO</button>
+      <HelpMarker text="Guardar este ejercicio" align="right">
+        <button onClick={handleSave} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95">GUARDAR TODO EL EJERCICIO</button>
+      </HelpMarker>
 
       {/* panel de estadisticas */}
       <StatsPanel stats={stats} loading={loadingStats} currentUnit={unit} />

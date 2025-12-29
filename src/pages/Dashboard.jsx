@@ -4,7 +4,7 @@ import WorkoutRecorder from "../components/workout/WorkoutRecorder";
 const Dashboard = () => {
   return (
     <div className="py-6">
-      <WorkoutRecorder />
+        <WorkoutRecorder />
     </div>
   );
 };
