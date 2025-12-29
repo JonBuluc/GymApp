@@ -1,16 +1,30 @@
-# React + Vite
+# RegiTreno
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+RegiTreno es una aplicacion web diseñada para el registro y analisis detallado de entrenamientos de fuerza. El proyecto permite transformar los levantamientos diarios en datos visuales para facilitar el seguimiento del progreso a largo plazo.
 
-Currently, two official plugins are available:
+## Caracteristicas Principales
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* Menu Desplegable: interfaz optimizada para navegacion movil.
+* Registro de Sesiones: gestion de ejercicios, series y repeticiones con persistencia en Firebase.
+* Panel de Progreso: visualizacion de evolucion de cargas y calculo de 1RM Estimado mediante Recharts.
+* Captura de Pantalla: exportacion de graficas y tarjetas de entrenamiento individuales en formato PNG.
+* Matriz de Constancia: visualizacion del historial mensual de dias entrenados.
+* Marca de Agua: identificacion automatica de la aplicacion y el usuario en las imagenes exportadas.
 
-## React Compiler
+## Tecnologias
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+* Frontend: React con Vite y Tailwind CSS.
+* Backend: Firebase (Firestore y Authentication).
+* Visualizacion: Recharts.
+* Exportacion: html2canvas.
 
-## Expanding the ESLint configuration
+## Instalacion
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Clonar el repositorio:
+   git clone https://github.com/JonBuluc/GymApp.git
+2. Instalar dependencias:
+   npm install
+3. Configurar variables de entorno:
+   Crear un archivo .env en la raiz con las credenciales de Firebase (API Key, Auth Domain, Project ID, etc.).
+4. Iniciar entorno de desarrollo:
+   npm run dev
