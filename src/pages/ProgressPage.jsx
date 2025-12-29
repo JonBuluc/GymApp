@@ -196,8 +196,9 @@ const ProgressPage = () => {
 
   const getSunday = (d) => {
     const date = new Date(d);
-    const day = date.getDay();
-    return new Date(date.setDate(date.getDate() - day));
+    const day = date.getUTCDay();
+    date.setUTCDate(date.getUTCDate() - day);
+    return date;
   };
 
   // procesamiento de datos para la grafica
@@ -254,7 +255,7 @@ const ProgressPage = () => {
     // Generar los 7 días de la semana seleccionada
     for (let i = 0; i < 7; i++) {
       const d = new Date(sunday);
-      d.setDate(sunday.getDate() + i);
+      d.setUTCDate(sunday.getUTCDate() + i);
       daysOfWeek.push(d.toISOString().split('T')[0]);
     }
 
