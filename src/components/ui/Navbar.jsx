@@ -20,6 +20,7 @@ const Navbar = () => {
     { name: 'Registrar', path: '/' },
     { name: 'Historial', path: '/historial' },
     { name: 'Progreso', path: '/progreso' },
+    { name: 'Importar/Exportar', path: '/importar' },
   ];
 
   return (

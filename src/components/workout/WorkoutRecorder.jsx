@@ -12,7 +12,10 @@ const WorkoutRecorder = () => {
   const [muscleGroup, setMuscleGroup] = useState('');
   const [exercise, setExercise] = useState('');
   const [unit, setUnit] = useState('kg');
-  const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0]);
+  const [workoutDate, setWorkoutDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+  });
   const [sets, setSets] = useState([{ id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false, isDropSet: false }]);
   
   // estado de datos externos

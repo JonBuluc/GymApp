@@ -5,7 +5,7 @@ import Combobox from '../components/ui/Combobox';
 import EditSetModal from '../components/workout/EditSetModal';
 import { downloadAsPNG } from '../utils/downloadImage';
 import MarcaAgua from '../components/ui/MarcaAgua';
-
+import {bulkUpdateMuscleGroup} from '../services/firestore';
 // funcion auxiliar para recalcular totales de sesion
 const recalculateSession = (session, updatedExercises) => {
   let totalVolumeKg = 0;
@@ -56,6 +56,8 @@ const HistoryPage = () => {
   // estado de edicion
   const [editingSet, setEditingSet] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [bulkEdit, setBulkEdit] = useState(null); // { type: 'session' | 'exercise', targetName: string, sessionDate: string, setIds: [] }
+  const [tempMuscle, setTempMuscle] = useState('');
 
   // cargar grupos musculares al inicio
   useEffect(() => {
@@ -195,6 +197,29 @@ const HistoryPage = () => {
     }
   };
 
+  const handleBulkUpdate = async () => {
+  if (!bulkEdit || !tempMuscle) return;
+  try {
+    await bulkUpdateMuscleGroup(bulkEdit.setIds, tempMuscle);
+    
+    // actualizacion optimista local
+    setHistoryData(prev => prev.map(session => {
+      if (session.date !== bulkEdit.sessionDate) return session;
+      
+      const updatedExercises = session.exercises.map(ex => 
+        bulkEdit.setIds.includes(ex.id) ? { ...ex, muscleGroup: tempMuscle } : ex
+      );
+      return recalculateSession(session, updatedExercises);
+    }));
+    
+    setBulkEdit(null);
+    setTempMuscle('');
+  } catch (error) {
+    console.error("error en update masivo:", error);
+    alert("error al actualizar los grupos musculares.");
+  }
+};
+
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-6 pb-20">
       {/* header */}
@@ -302,9 +327,21 @@ const HistoryPage = () => {
                   </h3>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {session.muscleGroups.map(mg => (
-                      <span key={mg} className="bg-gray-700 text-xs rounded-full px-2 py-1 mr-2 text-gray-300 border border-gray-600 uppercase">
+                      <button 
+                        key={mg} 
+                        onClick={() => {
+                          setBulkEdit({
+                            type: 'session',
+                            targetName: mg,
+                            sessionDate: session.date,
+                            setIds: session.exercises.filter(ex => ex.muscleGroup === mg).map(ex => ex.id)
+                          });
+                          setTempMuscle('');
+                        }}
+                        className="bg-gray-700 hover:bg-gray-600 transition-colors text-xs rounded-full px-2 py-1 mr-2 text-gray-300 border border-gray-600 uppercase"
+                      >
                         {mg}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -352,9 +389,22 @@ const HistoryPage = () => {
                       <div className="flex justify-between items-baseline border-b border-gray-800 pb-1 mb-2">
                         <div className="flex items-center gap-2">
                           <h4 className="text-white font-bold capitalize text-lg">{group.name}</h4>
-                          <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full capitalize">
-                            {group.muscleGroup}
-                          </span>
+                          
+                            <button
+                              onClick={() => {
+                                setBulkEdit({
+                                  type: 'exercise',
+                                  targetName: group.name,
+                                  sessionDate: session.date,
+                                  setIds: group.sets.map(s => s.id)
+                                });
+                                setTempMuscle('');
+                              }}
+                              className="text-[10px] bg-gray-700 hover:bg-gray-600 transition-colors text-gray-300 px-2 py-0.5 rounded-full capitalize border border-gray-600"
+                            >
+                              {group.muscleGroup}
+                            </button>
+                          
                         </div>
                         <span className="text-xs text-gray-500">
                           Total: {Math.round(group.volume).toLocaleString()} {displayUnit}
@@ -466,6 +516,42 @@ const HistoryPage = () => {
           >
             Siguiente
           </button>
+        </div>
+      )}
+
+      {/* menu flotante de edicion masiva */}
+      {bulkEdit && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-gray-800 border border-gray-700 p-6 rounded-2xl shadow-2xl w-full max-w-sm">
+            <h3 className="text-white font-bold mb-1">Cambiar Grupo Muscular</h3>
+            <p className="text-gray-400 text-xs mb-4">
+              {bulkEdit.type === 'session' 
+                ? `Cambiando todas las series marcadas como "${bulkEdit.targetName}"`
+                : `Cambiando todas las series de "${bulkEdit.targetName}"`}
+            </p>
+            
+            <Combobox
+              options={availableMuscles}
+              value={tempMuscle}
+              onChange={setTempMuscle}
+              placeholder="Busca o escribe el nuevo grupo..."
+            />
+            
+            <div className="mt-6 space-y-2">
+              <button 
+                onClick={handleBulkUpdate}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-sm"
+              >
+                Guardar Cambios
+              </button>
+              <button 
+                onClick={() => setBulkEdit(null)}
+                className="w-full text-gray-500 hover:text-gray-300 text-sm py-2 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -15,6 +15,14 @@ import {
   startAfter,
 } from "firebase/firestore";
 import { db } from "./firebase";
+export const bulkUpdateMuscleGroup = async (setIds, newMuscleGroup) => {
+  const batch = writeBatch(db);
+  setIds.forEach(id => {
+    const ref = doc(db, 'workout_logs', id);
+    batch.update(ref, { muscleGroup: newMuscleGroup });
+  });
+  await batch.commit();
+};
 
 export const saveWorkoutBatch = async (workoutData) => {
   if (!workoutData || !workoutData.sets || workoutData.sets.length === 0) {

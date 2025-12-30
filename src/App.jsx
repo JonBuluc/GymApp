@@ -8,6 +8,8 @@ import LoginPage from "./pages/LoginPage";
 import Navbar from "./components/ui/Navbar";
 import HistoryPage from "./pages/HistoryPage";
 import ProgressPage from "./pages/ProgressPage";
+import ImportExportPage from './pages/ImportExportPage';
+
 
 function App() {
   return (
@@ -40,6 +42,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ProgressPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/importar" 
+                element={
+                  <ProtectedRoute>
+                    <ImportExportPage />
                   </ProtectedRoute>
                 } 
               />
