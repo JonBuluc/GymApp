@@ -54,7 +54,7 @@ const WorkoutRecorder = () => {
       if (user && exercise) {
         setLoadingStats(true);
         try {
-          const data = await getExerciseStats(user.uid, exercise);
+          const data = await getExerciseStats(user.uid, exercise, muscleGroup);
           setStats(data);
         } catch (error) {
           console.error("Error fetching stats:", error);
@@ -68,7 +68,7 @@ const WorkoutRecorder = () => {
     
     const timeoutId = setTimeout(fetchStats, 500);
     return () => clearTimeout(timeoutId);
-  }, [user, exercise]);
+  }, [user, exercise, muscleGroup]);
 
   // manejadores de sets
   const handleSetChange = (id, field, value) => {
@@ -151,7 +151,7 @@ const WorkoutRecorder = () => {
       // resetear sets
       setSets([{ id: Date.now(), weight: '', reps: '', rpe: '', isWarmup: false, isDropSet: false }]);
       // recargar stats
-      const newStats = await getExerciseStats(user.uid, exercise);
+      const newStats = await getExerciseStats(user.uid, exercise, muscleGroup);
       setStats(newStats);
     } catch (error) {
       console.error("Error saving workout:", error);
