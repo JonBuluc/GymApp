@@ -134,19 +134,24 @@ const ProgressPage = () => {
         const promises = selectedMuscles.map(m => getExerciseCatalog(user.uid, m));
         const results = await Promise.all(promises);
         // aplanar y unicos (mantener orden de musculos para agrupacion visual)
-        const newAvailable = [...new Set(results.flat())];
+        const newAvailable = [];
+        results.forEach((exercises, idx) => {
+          const muscle = selectedMuscles[idx];
+          exercises.forEach(ex => newAvailable.push(`${ex} (${muscle})`));
+        });
+        const uniqueAvailable = [...new Set(newAvailable)];
         
-        setAvailableExercises(newAvailable);
+        setAvailableExercises(uniqueAvailable);
 
         // logica cascada inteligente
         const prevAvailable = prevAvailableExercisesRef.current;
-        const added = newAvailable.filter(ex => !prevAvailable.includes(ex));
+        const added = uniqueAvailable.filter(ex => !prevAvailable.includes(ex));
         
         setSelectedExercises(prevSelected => {
-          const kept = prevSelected.filter(ex => newAvailable.includes(ex));
+          const kept = prevSelected.filter(ex => uniqueAvailable.includes(ex));
           return [...kept, ...added];
         });
-        prevAvailableExercisesRef.current = newAvailable;
+        prevAvailableExercisesRef.current = uniqueAvailable;
       } else {
         setAvailableExercises([]);
       }
@@ -207,11 +212,12 @@ const ProgressPage = () => {
 
     // filtrar por ejercicios seleccionados
     // Y filtrar por rango de fecha (SOLO afecta a esta grafica)
-    const filtered = rawData.filter(d => 
-      selectedExercises.includes(d.exercise) &&
-      d.dateString >= dateRange.start &&
-      d.dateString <= dateRange.end
-    );
+    const filtered = rawData.filter(d => {
+      const key = `${d.exercise} (${d.muscleGroup})`;
+      return selectedExercises.includes(key) &&
+        d.dateString >= dateRange.start &&
+        d.dateString <= dateRange.end;
+    });
 
     // agrupar por fecha
     const groupedByDate = {};
@@ -237,9 +243,9 @@ const ProgressPage = () => {
       }
 
       // tomar el mejor valor del dia para este ejercicio
-      const exercise = log.exercise;
-      if (!groupedByDate[date][exercise] || value > groupedByDate[date][exercise]) {
-        groupedByDate[date][exercise] = parseFloat(value.toFixed(2));
+      const exerciseKey = `${log.exercise} (${log.muscleGroup})`;
+      if (!groupedByDate[date][exerciseKey] || value > groupedByDate[date][exerciseKey]) {
+        groupedByDate[date][exerciseKey] = parseFloat(value.toFixed(2));
       }
     });
 

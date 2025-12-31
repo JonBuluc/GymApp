@@ -66,15 +66,23 @@ export const saveWorkoutBatch = async (workoutData) => {
   await batch.commit();
 };
 
-export const getExerciseStats = async (userId, exerciseName) => {
+export const getExerciseStats = async (userId, exerciseName, muscleGroup = null) => {
   const exerciseLower = exerciseName.toLowerCase();
   const collectionRef = collection(db, "workout_logs");
+
+  const baseConstraints = [
+    where("userId", "==", userId),
+    where("exercise", "==", exerciseLower)
+  ];
+
+  if (muscleGroup) {
+    baseConstraints.push(where("muscleGroup", "==", muscleGroup.toLowerCase()));
+  }
 
   // consulta a ultima sesion ordenada por fecha
   const lastSessionQuery = query(
     collectionRef,
-    where("userId", "==", userId),
-    where("exercise", "==", exerciseLower),
+    ...baseConstraints,
     orderBy("dateString", "desc"),
     limit(20) // limite razonable para encontrar la ultima sesion completa
   );
@@ -83,8 +91,7 @@ export const getExerciseStats = async (userId, exerciseName) => {
   // necesitamos traer todo el historial del ejercicio y procesarlo en memoria
   const historyQuery = query(
     collectionRef,
-    where("userId", "==", userId),
-    where("exercise", "==", exerciseLower),
+    ...baseConstraints,
     where("isWarmup", "==", false)
   );
 
