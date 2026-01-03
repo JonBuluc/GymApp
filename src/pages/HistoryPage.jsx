@@ -58,6 +58,8 @@ const HistoryPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bulkEdit, setBulkEdit] = useState(null); // { type: 'session' | 'exercise', targetName: string, sessionDate: string, setIds: [] }
   const [tempMuscle, setTempMuscle] = useState('');
+  const [tempExercise, setTempExercise] = useState('');
+  const [modalExercises, setModalExercises] = useState([]);
 
   // cargar grupos musculares al inicio
   useEffect(() => {
@@ -80,6 +82,19 @@ const HistoryPage = () => {
     };
     updateExercises();
   }, [user, filterMuscle]);
+
+  // cargar ejercicios para el modal de edicion cuando cambia el musculo temporal
+  useEffect(() => {
+    const updateModalExercises = async () => {
+      if (user && tempMuscle && bulkEdit?.type === 'rename_exercise') {
+        const exercises = await getExerciseCatalog(user.uid, tempMuscle);
+        setModalExercises(exercises);
+      } else {
+        setModalExercises([]);
+      }
+    };
+    updateModalExercises();
+  }, [user, tempMuscle, bulkEdit]);
 
   const loadData = useCallback(async (pageIndex, cursorToUse) => {
     setIsLoading(true);
@@ -200,20 +215,40 @@ const HistoryPage = () => {
   const handleBulkUpdate = async () => {
   if (!bulkEdit || !tempMuscle) return;
   try {
-    await bulkUpdateMuscleGroup(bulkEdit.setIds, tempMuscle);
-    
-    // actualizacion optimista local
-    setHistoryData(prev => prev.map(session => {
-      if (session.date !== bulkEdit.sessionDate) return session;
+    if (bulkEdit.type === 'rename_exercise') {
+      if (!tempExercise) return;
       
-      const updatedExercises = session.exercises.map(ex => 
-        bulkEdit.setIds.includes(ex.id) ? { ...ex, muscleGroup: tempMuscle } : ex
-      );
-      return recalculateSession(session, updatedExercises);
-    }));
+      // Actualizar todas las series
+      await Promise.all(bulkEdit.setIds.map(id => 
+        updateWorkoutSet(id, { exercise: tempExercise, muscleGroup: tempMuscle })
+      ));
+
+      // Actualizacion optimista local
+      setHistoryData(prev => prev.map(session => {
+        if (session.date !== bulkEdit.sessionDate) return session;
+        
+        const updatedExercises = session.exercises.map(ex => 
+          bulkEdit.setIds.includes(ex.id) ? { ...ex, exercise: tempExercise, muscleGroup: tempMuscle } : ex
+        );
+        return recalculateSession(session, updatedExercises);
+      }));
+    } else {
+      await bulkUpdateMuscleGroup(bulkEdit.setIds, tempMuscle);
+      
+      // Actualizacion optimista local
+      setHistoryData(prev => prev.map(session => {
+        if (session.date !== bulkEdit.sessionDate) return session;
+        
+        const updatedExercises = session.exercises.map(ex => 
+          bulkEdit.setIds.includes(ex.id) ? { ...ex, muscleGroup: tempMuscle } : ex
+        );
+        return recalculateSession(session, updatedExercises);
+      }));
+    }
     
     setBulkEdit(null);
     setTempMuscle('');
+    setTempExercise('');
   } catch (error) {
     console.error("error en update masivo:", error);
     alert("error al actualizar los grupos musculares.");
@@ -388,7 +423,21 @@ const HistoryPage = () => {
                       {/* exercise header */}
                       <div className="flex justify-between items-baseline border-b border-gray-800 pb-1 mb-2">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-white font-bold capitalize text-lg">{group.name}</h4>
+                          <h4 
+                            className="text-white font-bold capitalize text-lg cursor-pointer hover:text-blue-400 transition-colors"
+                            onClick={() => {
+                              setBulkEdit({
+                                type: 'rename_exercise',
+                                targetName: group.name,
+                                sessionDate: session.date,
+                                setIds: group.sets.map(s => s.id)
+                              });
+                              setTempMuscle(group.muscleGroup);
+                              setTempExercise(group.name);
+                            }}
+                          >
+                            {group.name}
+                          </h4>
                           
                             <button
                               onClick={() => {
@@ -523,19 +572,42 @@ const HistoryPage = () => {
       {bulkEdit && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-gray-800 border border-gray-700 p-6 rounded-2xl shadow-2xl w-full max-w-sm">
-            <h3 className="text-white font-bold mb-1">Cambiar Grupo Muscular</h3>
+            <h3 className="text-white font-bold mb-1">
+              {bulkEdit.type === 'rename_exercise' ? 'Renombrar Ejercicio' : 'Cambiar Grupo Muscular'}
+            </h3>
             <p className="text-gray-400 text-xs mb-4">
               {bulkEdit.type === 'session' 
                 ? `Cambiando todas las series marcadas como "${bulkEdit.targetName}"`
-                : `Cambiando todas las series de "${bulkEdit.targetName}"`}
+                : bulkEdit.type === 'rename_exercise'
+                  ? `Renombrando todas las series de "${bulkEdit.targetName}"`
+                  : `Cambiando todas las series de "${bulkEdit.targetName}"`}
             </p>
             
-            <Combobox
-              options={availableMuscles}
-              value={tempMuscle}
-              onChange={setTempMuscle}
-              placeholder="Busca o escribe el nuevo grupo..."
-            />
+            <div className="space-y-4">
+              <div>
+                {bulkEdit.type === 'rename_exercise' && (
+                  <label className="text-xs text-gray-400 block mb-1">Grupo Muscular</label>
+                )}
+                <Combobox
+                  options={availableMuscles}
+                  value={tempMuscle}
+                  onChange={setTempMuscle}
+                  placeholder="Busca o escribe el grupo..."
+                />
+              </div>
+
+              {bulkEdit.type === 'rename_exercise' && (
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Nuevo Nombre</label>
+                  <Combobox
+                    options={modalExercises}
+                    value={tempExercise}
+                    onChange={setTempExercise}
+                    placeholder="Busca o escribe el ejercicio..."
+                  />
+                </div>
+              )}
+            </div>
             
             <div className="mt-6 space-y-2">
               <button 
@@ -545,7 +617,11 @@ const HistoryPage = () => {
                 Guardar Cambios
               </button>
               <button 
-                onClick={() => setBulkEdit(null)}
+                onClick={() => {
+                  setBulkEdit(null);
+                  setTempMuscle('');
+                  setTempExercise('');
+                }}
                 className="w-full text-gray-500 hover:text-gray-300 text-sm py-2 transition-colors"
               >
                 Cancelar
