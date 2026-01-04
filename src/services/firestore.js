@@ -13,6 +13,7 @@ import {
   where,
   writeBatch,
   startAfter,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 export const bulkUpdateMuscleGroup = async (setIds, newMuscleGroup) => {
@@ -200,6 +201,63 @@ export const deleteWorkoutSet = async (setId) => {
   }
 };
 
+// --- gestion de sesiones (timer) ---
+
+export const getWorkoutSession = async (userId, date) => {
+  try {
+    const docId = `${userId}_${date}`;
+    const docRef = doc(db, "workout_sessions", docId);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? docSnap.data() : null;
+  } catch (error) {
+    console.error("Error getting workout session:", error);
+    return null;
+  }
+};
+
+export const startWorkoutSession = async (userId, date) => {
+  if (!userId || !date) return;
+  try {
+    const docId = `${userId}_${date}`;
+    const docRef = doc(db, "workout_sessions", docId);
+    
+    const data = {
+      status: 'running',
+      startTime: serverTimestamp(),
+      lastUpdated: serverTimestamp(),
+    };
+
+    // usamos set con merge para crear si no existe
+    await setDoc(docRef, data, { merge: true });
+  } catch (error) {
+    console.error("Error starting session:", error);
+  }
+};
+
+export const pauseWorkoutSession = async (userId, date, accumulatedSeconds) => {
+  if (!userId || !date) return;
+  try {
+    const docId = `${userId}_${date}`;
+    const docRef = doc(db, "workout_sessions", docId);
+    
+    const data = {
+      status: 'paused',
+      startTime: null,
+      accumulatedSeconds: accumulatedSeconds,
+      lastUpdated: serverTimestamp(),
+    };
+
+    await setDoc(docRef, data, { merge: true });
+  } catch (error) {
+    console.error("Error pausing session:", error);
+  }
+};
+
+export const updateManualDuration = async (userId, date, totalSeconds) => {
+  // al editar manualmente, forzamos pausa y sobrescribimos el acumulado
+  await pauseWorkoutSession(userId, date, totalSeconds);
+};
+
 export const updateWorkoutSet = async (setId, updatedData) => {
   try {
     const docRef = doc(db, "workout_logs", setId);
@@ -319,6 +377,7 @@ export const getWorkoutHistory = async (userId, lastDoc = null, filters = {}) =>
       if (!sessionsMap[date]) {
         sessionsMap[date] = {
           date,
+          userId: data.userId,
           muscleGroups: new Set(),
           totalVolumeKg: 0,
           totalSets: 0,

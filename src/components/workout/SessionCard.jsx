@@ -1,6 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { downloadAsPNG } from '../../utils/downloadImage';
 import MarcaAgua from '../ui/MarcaAgua';
+import { getWorkoutSession, updateManualDuration } from '../../services/firestore';
+import { Clock } from 'lucide-react';
+import EditDurationModal from './EditDurationModal';
 
 const convertWeight = (weight, fromUnit, toUnit) => {
   if (fromUnit === toUnit) return weight;
@@ -11,6 +14,28 @@ const convertWeight = (weight, fromUnit, toUnit) => {
 
 const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userName }) => {
   const cardRef = useRef(null);
+  const [duration, setDuration] = useState(null);
+  const [isDurationModalOpen, setIsDurationModalOpen] = useState(false);
+
+  // cargar duracion de la sesion
+  useEffect(() => {
+    const loadDuration = async () => {
+      if (session.userId && session.date) {
+        const sessionData = await getWorkoutSession(session.userId, session.date);
+        if (sessionData) {
+          // calcular tiempo total (acumulado + actual si corre)
+          let total = sessionData.accumulatedSeconds || 0;
+          if (sessionData.status === 'running' && sessionData.startTime) {
+            const now = new Date();
+            const start = sessionData.startTime.toDate();
+            total += Math.floor((now - start) / 1000);
+          }
+          setDuration(total);
+        }
+      }
+    };
+    loadDuration();
+  }, [session]);
 
   const displayVolume = displayUnit === 'kg' 
     ? session.totalVolumeKg 
@@ -37,13 +62,31 @@ const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userN
     groupsMap[key].volume += w * set.reps;
   });
 
+  const formatDuration = (seconds) => {
+    if (!seconds) return null;
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  };
+
+  const handleEditDuration = () => {
+    setIsDurationModalOpen(true);
+  };
+
+  const handleSaveDuration = async (totalSeconds) => {
+    setDuration(totalSeconds);
+    await updateManualDuration(session.userId, session.date, totalSeconds);
+    setIsDurationModalOpen(false);
+  };
+
   return (
     <div 
       ref={cardRef}
       className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg relative"
     >
       {/* card header */}
-      <div className="bg-gray-750 p-4 border-b border-gray-700 flex justify-between items-start">
+      <div className="bg-gray-750 pt-4 px-4 pb-1 flex justify-between items-start">
         <div>
           <h3 className="text-lg font-bold text-white capitalize">
             {new Date(session.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -79,6 +122,16 @@ const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userN
           </svg>
         </button>
       </div>
+
+      {/* duration badge */}
+      {duration !== null && duration > 0 && (
+        <div className="bg-gray-800 px-4 pb-2 pt-1 border-b border-gray-700 flex justify-start">
+          <button onClick={handleEditDuration} className="text-xs font-mono text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors bg-blue-900/20 px-3 py-1 rounded-full border border-blue-900/50">
+            <Clock size={14} />
+            {formatDuration(duration)}
+          </button>
+        </div>
+      )}
 
       {/* metrics */}
       <div className="grid grid-cols-3 divide-x divide-gray-700 border-b border-gray-700 bg-gray-800/50">
@@ -215,6 +268,13 @@ const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userN
         })}
       </div>
       <MarcaAgua userName={userName} />
+
+      <EditDurationModal 
+        isOpen={isDurationModalOpen}
+        onClose={() => setIsDurationModalOpen(false)}
+        onSave={handleSaveDuration}
+        initialSeconds={duration}
+      />
     </div>
   );
 };

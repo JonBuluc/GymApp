@@ -4,6 +4,7 @@ import { saveWorkoutBatch, getExerciseCatalog, getMuscleGroups } from '../../ser
 import Combobox from '../ui/Combobox';
 import HelpMarker from '../ui/HelpMarker';
 import SetRow from './SetRow';
+import WorkoutTimer from './WorkoutTimer';
 
 const WorkoutRecorder = ({ 
   date, 
@@ -143,8 +144,10 @@ const WorkoutRecorder = ({
 
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-6">
-      {/* selector de fecha */}
-      <div className="flex justify-end">
+      {/* header: timer y fecha */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <WorkoutTimer userId={user?.uid} date={date} />
+        
         <HelpMarker text="Fecha del entrenamiento" className="w-auto">
           <input 
             type="date" 
