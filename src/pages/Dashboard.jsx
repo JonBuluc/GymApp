@@ -110,6 +110,17 @@ const Dashboard = () => {
     }
   };
 
+  const handleBulkDelete = async (data) => {
+    if (!data) return;
+    try {
+      await Promise.all(data.setIds.map(id => deleteWorkoutSet(id)));
+      setBulkEdit(null);
+      setRefreshTrigger(prev => prev + 1); // recargar datos frescos
+    } catch (error) {
+      console.error("error en delete masivo dashboard:", error);
+    }
+  };
+
   return (
     <div className="py-6">
         <WorkoutRecorder 
@@ -154,6 +165,7 @@ const Dashboard = () => {
           isOpen={!!bulkEdit}
           onClose={() => setBulkEdit(null)}
           onSave={handleBulkUpdate}
+          onDelete={handleBulkDelete}
           bulkEditData={bulkEdit}
           availableMuscles={availableMuscles}
           user={user}

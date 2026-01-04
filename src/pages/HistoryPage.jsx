@@ -229,6 +229,26 @@ const HistoryPage = () => {
   }
 };
 
+  const handleBulkDelete = async (data) => {
+    if (!data) return;
+    try {
+      await Promise.all(data.setIds.map(id => deleteWorkoutSet(id)));
+      
+      // Actualizacion optimista local
+      setHistoryData(prev => prev.map(session => {
+        if (session.date !== data.sessionDate) return session;
+        
+        const updatedExercises = session.exercises.filter(ex => !data.setIds.includes(ex.id));
+        return recalculateSession(session, updatedExercises);
+      }).filter(session => session.exercises.length > 0)); // eliminar sesiones vacias
+
+      setBulkEdit(null);
+    } catch (error) {
+      console.error("error en delete masivo history:", error);
+      alert("error al eliminar ejercicios.");
+    }
+  };
+
   const handleBulkEditRequest = (editData) => {
     setBulkEdit(editData);
   };
@@ -347,6 +367,7 @@ const HistoryPage = () => {
         isOpen={!!bulkEdit}
         onClose={() => setBulkEdit(null)}
         onSave={handleBulkUpdate}
+        onDelete={handleBulkDelete}
         bulkEditData={bulkEdit}
         availableMuscles={availableMuscles}
         user={user}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Combobox from '../ui/Combobox';
 import { getExerciseCatalog } from '../../services/firestore';
 
-const BulkEditModal = ({ isOpen, onClose, onSave, bulkEditData, availableMuscles, user }) => {
+const BulkEditModal = ({ isOpen, onClose, onSave, onDelete, bulkEditData, availableMuscles, user }) => {
   const [tempMuscle, setTempMuscle] = useState('');
   const [tempExercise, setTempExercise] = useState('');
   const [modalExercises, setModalExercises] = useState([]);
@@ -36,6 +36,12 @@ const BulkEditModal = ({ isOpen, onClose, onSave, bulkEditData, availableMuscles
       newMuscle: tempMuscle,
       newExercise: tempExercise
     });
+  };
+
+  const handleDelete = () => {
+    if (window.confirm(`¿Estás seguro de eliminar todo el ejercicio "${bulkEditData.targetName}"? Esta acción borrará todas las series asociadas y no se puede deshacer.`)) {
+      onDelete(bulkEditData);
+    }
   };
 
   return (
@@ -85,6 +91,16 @@ const BulkEditModal = ({ isOpen, onClose, onSave, bulkEditData, availableMuscles
           >
             Guardar Cambios
           </button>
+          
+          {bulkEditData.type === 'rename_exercise' && (
+            <button 
+              onClick={handleDelete}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition-colors text-sm"
+            >
+              Eliminar Ejercicio
+            </button>
+          )}
+
           <button 
             onClick={onClose}
             className="w-full text-gray-500 hover:text-gray-300 text-sm py-2 transition-colors"
