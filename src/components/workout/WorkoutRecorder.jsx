@@ -179,7 +179,10 @@ const WorkoutRecorder = () => {
       </div>
 
       {/* selectores */}
-      <HelpMarker text="Cada ejercicio se compone de Grupo y Nombre. Busca o escribe en los campos para crear nuevos registros dinámicamente.">
+      <HelpMarker text={<>
+        Cada ejercicio se compone de Grupo y Nombre.<br />
+        Busca o escribe en los campos para crear nuevos registros dinámicamente.
+      </>}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Combobox
             value={muscleGroup}
