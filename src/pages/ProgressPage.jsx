@@ -50,6 +50,11 @@ const CustomTooltip = ({ active, payload, label, unit }) => {
   return null;
 };
 
+// Helper para obtener fecha local en formato YYYY-MM-DD
+const getLocalDateStr = (date = new Date()) => {
+  return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+};
+
 const ProgressPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -65,8 +70,8 @@ const ProgressPage = () => {
   // filtros
   const [dateRangePreset, setDateRangePreset] = useState('3months');
   const [dateRange, setDateRange] = useState({
-    start: new Date(new Date().setMonth(new Date().getMonth() - 3)).toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+    start: getLocalDateStr(new Date(new Date().setMonth(new Date().getMonth() - 3))),
+    end: getLocalDateStr()
   });
   const [selectedMuscles, setSelectedMuscles] = useState([]);
   const [selectedExercises, setSelectedExercises] = useState([]);
@@ -77,7 +82,7 @@ const ProgressPage = () => {
   const [radarMetric, setRadarMetric] = useState('sets'); // 'sets' | 'volume'
   const [radarTimeRange, setRadarTimeRange] = useState('month');
   const [tooltipData, setTooltipData] = useState(null);
-  const [volumeSelectedDate, setVolumeSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [volumeSelectedDate, setVolumeSelectedDate] = useState(getLocalDateStr());
   const [constancyMonths, setConstancyMonths] = useState([]);
 
   // opciones
@@ -113,8 +118,8 @@ const ProgressPage = () => {
     }
 
     setDateRange({
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
+      start: getLocalDateStr(start),
+      end: getLocalDateStr(end)
     });
   }, [dateRangePreset]);
 
@@ -166,7 +171,7 @@ const ProgressPage = () => {
       if (user) {
         setLoading(true);
         try {
-          const data = await getAnalyticsData(user.uid, '2020-01-01', new Date().toISOString().split('T')[0]);
+          const data = await getAnalyticsData(user.uid, '2020-01-01', getLocalDateStr());
           setRawData(data);
         } catch (error) {
           console.error("Error loading analytics:", error);

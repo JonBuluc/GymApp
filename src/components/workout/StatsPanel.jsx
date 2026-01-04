@@ -25,6 +25,17 @@ const getRpeColor = (rpe) => {
   return 'text-green-400';
 };
 
+// Helper para formatear fechas de forma amigable
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', { 
+    weekday: 'short', 
+    day: 'numeric', 
+    month: 'short',
+    year: '2-digit'
+  });
+};
+
 const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
   if (loading) {
     return (
@@ -49,7 +60,12 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
 
   // ordenar sets de la ultima sesion por orden de ejecucion
   const sortedSession = lastSession
-    ? [...lastSession].sort((a, b) => a.setOrder - b.setOrder)
+    ? [...lastSession].sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        if (timeA !== timeB) return timeA - timeB;
+        return a.setOrder - b.setOrder;
+      })
     : [];
 
   // pre procesamiento de etiquetas para conteo correcto
@@ -80,7 +96,7 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
         {processedSession.length > 0 ? (
           <div>
             <div className="text-sm text-blue-400 mb-2 font-medium">
-              {processedSession[0].dateString}
+              {formatDate(processedSession[0].dateString)}
             </div>
             <ul className="space-y-1">
               {processedSession.map((set, index) => {
@@ -127,7 +143,7 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
               <div className="text-xs text-gray-500 mt-2 leading-tight">
                 Basado en: {pr1rm.weight}{pr1rm.unit} x {pr1rm.reps}
                 <br />
-                <span className="opacity-75">(Serie #{pr1rm.setOrder} el {pr1rm.dateString})</span>
+                <span className="opacity-75">(Serie #{pr1rm.setOrder} el {formatDate(pr1rm.dateString)})</span>
                 {pr1rm.rpe && (
                   <span className={`block mt-1 font-bold ${getRpeColor(pr1rm.rpe)}`}>
                     RPE {pr1rm.rpe}
@@ -163,7 +179,7 @@ const StatsPanel = ({ stats, loading, currentUnit = 'kg' }) => {
               <div className="text-xs text-gray-500 mt-2 leading-tight">
                 Original: {prWeight.weight}{prWeight.unit} x {prWeight.reps} reps
                 <br />
-                <span className="opacity-75">(Serie #{prWeight.setOrder} el {prWeight.dateString})</span>
+                <span className="opacity-75">(Serie #{prWeight.setOrder} el {formatDate(prWeight.dateString)})</span>
                 {prWeight.rpe && (
                   <span className={`block mt-1 font-bold ${getRpeColor(prWeight.rpe)}`}>
                     RPE {prWeight.rpe}

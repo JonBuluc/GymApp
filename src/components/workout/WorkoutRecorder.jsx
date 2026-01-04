@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { saveWorkoutBatch, getExerciseStats, getExerciseCatalog, getMuscleGroups } from '../../services/firestore';
 import Combobox from '../ui/Combobox';
-import StatsPanel from './StatsPanel';
+import StatsPanel from './StatsPanel'
 import HelpMarker from '../ui/HelpMarker';
 
 const WorkoutRecorder = () => {
@@ -136,13 +136,17 @@ const WorkoutRecorder = () => {
       return;
     }
     
+    const now = new Date();
+
     const workoutData = {
       userId: user.uid,
       muscleGroup,
       exercise,
       unit,
       sets: validSets,
-      date: workoutDate
+      date: workoutDate,
+      dateString: workoutDate,
+      createdAt: now
     };
 
     try {

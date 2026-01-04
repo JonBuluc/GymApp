@@ -34,7 +34,9 @@ export const saveWorkoutBatch = async (workoutData) => {
   const dateString = workoutData.date || new Date().toISOString().slice(0, 10);
   
   let createdAt;
-  if (workoutData.date) {
+  if (workoutData.createdAt) {
+    createdAt = Timestamp.fromDate(new Date(workoutData.createdAt));
+  } else if (workoutData.date) {
     createdAt = Timestamp.fromDate(new Date(`${workoutData.date}T12:00:00`));
   } else {
     createdAt = serverTimestamp();
@@ -350,7 +352,12 @@ export const getWorkoutHistory = async (userId, lastDoc = null, filters = {}) =>
     // transformar map a array y ordenar
     let sessions = Object.values(sessionsMap)
       .map(session => {
-        session.exercises.sort((a, b) => a.setOrder - b.setOrder);
+        session.exercises.sort((a, b) => {
+          const timeA = a.createdAt?.seconds || 0;
+          const timeB = b.createdAt?.seconds || 0;
+          if (timeA !== timeB) return timeA - timeB;
+          return a.setOrder - b.setOrder;
+        });
         return {
           ...session,
           muscleGroups: Array.from(session.muscleGroups),
