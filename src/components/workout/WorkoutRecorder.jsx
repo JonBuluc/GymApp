@@ -179,24 +179,22 @@ const WorkoutRecorder = () => {
       </div>
 
       {/* selectores */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <HelpMarker text="Grupo muscular principal">
+      <HelpMarker text="Cada ejercicio se compone de Grupo y Nombre. Busca o escribe en los campos para crear nuevos registros dinámicamente.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Combobox
             value={muscleGroup}
             onChange={(val) => { setMuscleGroup(val); setExercise(''); }}
             options={availableMuscleGroups}
             placeholder="Grupo Muscular"
           />
-        </HelpMarker>
-        <HelpMarker text="Ejercicio">
           <Combobox
             value={exercise}
             onChange={setExercise}
             options={exerciseCatalog}
             placeholder="Ejercicio"
           />
-        </HelpMarker>
-      </div>
+        </div>
+      </HelpMarker>
 
       {/* tabla de series */}
       <div className="bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-700">

@@ -5,6 +5,7 @@ import { useHelp } from '../../context/HelpContext';
 import EditProfileModal from '../../services/EditProfileModal';
 import Logo from '../../assets/Logo.svg';
 import HelpOverlay from './HelpOverlay';
+import { Dumbbell, History, LineChart, ArrowRightLeft, Info } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -17,11 +18,11 @@ const Navbar = () => {
   const toggleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen);
 
   const navLinks = [
-    { name: 'Registrar', path: '/' },
-    { name: 'Historial', path: '/historial' },
-    { name: 'Progreso', path: '/progreso' },
-    { name: 'Importar/Exportar', path: '/importar' },
-    { name: 'Acerca de', path: '/info' },
+    { name: 'Registrar', path: '/', icon: <Dumbbell size={20} /> },
+    { name: 'Historial', path: '/historial', icon: <History size={20} /> },
+    { name: 'Progreso', path: '/progreso', icon: <LineChart size={20} /> },
+    { name: 'Importar/Exportar', path: '/importar', icon: <ArrowRightLeft size={20} /> },
+    { name: 'Acerca de', path: '/info', icon: <Info size={20} /> },
   ];
 
   return (
@@ -136,8 +137,9 @@ const Navbar = () => {
                 key={link.path}
                 to={link.path}
                 onClick={toggleSidebar}
-                className="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all font-medium"
+                className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all font-medium"
               >
+                {link.icon}
                 {link.name}
               </Link>
             ))}

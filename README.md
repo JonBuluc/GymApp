@@ -30,10 +30,10 @@ Para el funcionamiento de esta arquitectura BaaS, utilizamos las siguientes libr
    git clone https://github.com/JonBuluc/GymApp.git
 
 2. Instalar las dependencias que estamos utilizando:
-   # instalacion de dependencias de produccion
+   ## instalacion de dependencias de produccion
    npm install firebase recharts papaparse html2canvas lucide-react
    
-   # instalacion de herramientas de desarrollo y estilos
+   ## instalacion de herramientas de desarrollo y estilos
    npm install -D tailwindcss postcss autoprefixer vite @vitejs/plugin-react
 
 3. Configurar variables de entorno:
@@ -49,13 +49,13 @@ Para el funcionamiento de esta arquitectura BaaS, utilizamos las siguientes libr
 
 En este proyecto, utilizamos Vite como herramienta de construccion y servidor de desarrollo. Este es el flujo de comandos que seguimos:
 
-# para trabajar localmente (inicia el servidor de desarrollo)
+## para trabajar localmente (inicia el servidor de desarrollo)
 npm run dev
 
-# para generar la version final de la pagina estatica
+## para generar la version final de la pagina estatica
 npm run build
 
-# para probar la version de produccion antes de subirla
+## para probar la version de produccion antes de subirla
 npm run preview
 
 ## Despliegue en Firebase Hosting
@@ -73,3 +73,7 @@ Como RegiTreno es una aplicacion web estatica, la desplegamos en Firebase Hostin
    npm run build
    # subimos la carpeta dist al hosting de firebase
    firebase deploy
+
+## Licencia
+
+Este proyecto se distribuye bajo la licencia MIT. consulta el archivo LICENSE para mas detalles.
