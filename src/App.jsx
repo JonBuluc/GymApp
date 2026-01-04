@@ -9,6 +9,7 @@ import Navbar from "./components/ui/Navbar";
 import HistoryPage from "./pages/HistoryPage";
 import ProgressPage from "./pages/ProgressPage";
 import ImportExportPage from './pages/ImportExportPage';
+import InfoPage from "./pages/InfoPage";
 
 
 function App() {
@@ -50,6 +51,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ImportExportPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/info" 
+                element={
+                  <ProtectedRoute>
+                    <InfoPage />
                   </ProtectedRoute>
                 } 
               />

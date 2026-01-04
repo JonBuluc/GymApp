@@ -21,6 +21,7 @@ const Navbar = () => {
     { name: 'Historial', path: '/historial' },
     { name: 'Progreso', path: '/progreso' },
     { name: 'Importar/Exportar', path: '/importar' },
+    { name: 'Acerca de', path: '/info' },
   ];
 
   return (
