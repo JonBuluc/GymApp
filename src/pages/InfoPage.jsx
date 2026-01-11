@@ -51,17 +51,8 @@ const InfoPage = () => {
           </span>
         </div>
         <p className="text-gray-400 text-sm">
-          Tu compañero de entrenamiento minimalista y efectivo.
+          Registra tu entrenamiento.
         </p>
-        {/* enlace al sitio web oficial (preparado para cuando tengas el dominio) */}
-        <a 
-          href="https://regitreno.mx" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="inline-block mt-4 text-sm text-blue-400 hover:text-blue-300 transition-colors border-b border-blue-400 hover:border-blue-300 pb-0.5"
-        >
-          Visitar sitio oficial →
-        </a>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

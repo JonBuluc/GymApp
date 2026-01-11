@@ -86,7 +86,7 @@ const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userN
       className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg relative"
     >
       {/* card header */}
-      <div className="bg-gray-750 pt-4 px-4 pb-1 flex justify-between items-start">
+      <div className="bg-gray-750 pt-4 px-4 pb-4 flex justify-between items-start">
         <div>
           <h3 className="text-lg font-bold text-white capitalize">
             {new Date(session.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -125,7 +125,7 @@ const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userN
 
       {/* duration badge */}
       {duration !== null && duration > 0 && (
-        <div className="bg-gray-800 px-4 pb-2 pt-1 border-b border-gray-700 flex justify-start">
+        <div className="bg-gray-800 px-4 pb-4 pt-0 flex justify-start">
           <button onClick={handleEditDuration} className="text-xs font-mono text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors bg-blue-900/20 px-3 py-1 rounded-full border border-blue-900/50">
             <Clock size={14} />
             {formatDuration(duration)}
@@ -134,7 +134,7 @@ const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userN
       )}
 
       {/* metrics */}
-      <div className="grid grid-cols-3 divide-x divide-gray-700 border-b border-gray-700 bg-gray-800/50">
+      <div className="grid grid-cols-3 divide-x divide-gray-700 border-t border-b border-gray-700 bg-gray-800/50">
         <div className="p-3 text-center">
           <div className="text-xs text-gray-500 uppercase tracking-wider">Volumen Total</div>
           <div className="text-xl font-bold text-white">

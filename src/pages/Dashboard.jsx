@@ -4,6 +4,7 @@ import WorkoutRecorder from "../components/workout/WorkoutRecorder";
 import SessionCard from "../components/workout/SessionCard";
 import EditSetModal from "../components/workout/EditSetModal";
 import BulkEditModal from "../components/workout/BulkEditModal";
+import HelpMarker from "../components/ui/HelpMarker";
 import StatsPanel from "../components/workout/StatsPanel";
 import { getWorkoutHistory, updateWorkoutSet, deleteWorkoutSet, bulkUpdateMuscleGroup, getMuscleGroups, getExerciseStats } from "../services/firestore";
 
@@ -137,19 +138,34 @@ const Dashboard = () => {
         
         {/* panel de estadisticas (solo si hay ejercicio seleccionado) */}
         {currentExercise && (
-          <div className="max-w-3xl mx-auto px-4 mt-6"><StatsPanel stats={stats} loading={loadingStats} currentUnit={unit} /></div>
+          <div className="max-w-3xl mx-auto px-4 mt-6">
+            <div className="mb-2">
+              <HelpMarker text={<>
+                Estadísticas rápidas y récords históricos del ejercicio que estás registrando actualmente.<br />
+                Para ayudar a seleccionar peso y repeticiones a sus series actuales.
+              </>}>
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Referencia del Ejercicio</h3>
+              </HelpMarker>
+            </div>
+            <StatsPanel stats={stats} loading={loadingStats} currentUnit={unit} />
+          </div>
         )}
 
         {selectedSession && (
           <div className="max-w-3xl mx-auto px-4 mt-8">
             <h2 className="text-xl font-bold text-white mb-4">Resumen del Día</h2>
-            <SessionCard 
-              session={selectedSession} 
-              displayUnit={unit}
-              onEditSet={handleEditSet}
-              onBulkEdit={setBulkEdit}
-              userName={user?.displayName || user?.email}
-            />
+            <HelpMarker text={<>
+              Listado de todos los ejercicios y series completados en la fecha seleccionada.<br />
+              Puedes editar todo el día.
+            </>}>
+              <SessionCard 
+                session={selectedSession} 
+                displayUnit={unit}
+                onEditSet={handleEditSet}
+                onBulkEdit={setBulkEdit}
+                userName={user?.displayName || user?.email}
+              />
+            </HelpMarker>
           </div>
         )}
 

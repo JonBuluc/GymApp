@@ -497,3 +497,23 @@ export const getAnalyticsData = async (userId, startDate, endDate) => {
     throw error;
   }
 };
+
+// obtener duraciones de sesiones para un array de fechas
+export const getWorkoutSessionsForWeek = async (userId, datesArray) => {
+  try {
+    const promises = datesArray.map(date => 
+      getDoc(doc(db, "workout_sessions", `${userId}_${date}`))
+    );
+    const snapshots = await Promise.all(promises);
+    
+    const sessionsMap = {};
+    snapshots.forEach((snap, i) => {
+      sessionsMap[datesArray[i]] = snap.exists() ? (snap.data().accumulatedSeconds || 0) : 0;
+    });
+    
+    return sessionsMap;
+  } catch (error) {
+    console.error("error en getWorkoutSessionsForWeek:", error);
+    return {};
+  }
+};

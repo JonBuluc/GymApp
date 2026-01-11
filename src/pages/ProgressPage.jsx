@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getAnalyticsData, getMuscleGroups, getExerciseCatalog } from '../services/firestore';
+import { getAnalyticsData, getMuscleGroups, getExerciseCatalog, getWorkoutSessionsForWeek } from '../services/firestore';
 import MultiSelect from '../components/ui/MultiSelect';
 import WeekPicker from '../components/ui/WeekPicker';
 import { downloadAsPNG } from '../utils/downloadImage';
 import MarcaAgua from '../components/ui/MarcaAgua';
 import HelpMarker from '../components/ui/HelpMarker';
 import {
+  ComposedChart,
   LineChart,
   Line,
   XAxis,
@@ -83,6 +84,7 @@ const ProgressPage = () => {
   const [radarTimeRange, setRadarTimeRange] = useState('month');
   const [tooltipData, setTooltipData] = useState(null);
   const [volumeSelectedDate, setVolumeSelectedDate] = useState(getLocalDateStr());
+  const [weeklyVolumeData, setWeeklyVolumeData] = useState([]);
   const [constancyMonths, setConstancyMonths] = useState([]);
 
   // opciones
@@ -257,37 +259,48 @@ const ProgressPage = () => {
     return Object.values(groupedByDate).sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [rawData, selectedExercises, unitMode, metricMode, dateRange]);
 
-  // 1. Volumen Semanal
-  const weeklyVolumeData = useMemo(() => {
-    const sunday = getSunday(volumeSelectedDate);
-    const daysOfWeek = [];
-    const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
-    
-    // Generar los 7 días de la semana seleccionada
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(sunday);
-      d.setUTCDate(sunday.getUTCDate() + i);
-      daysOfWeek.push(d.toISOString().split('T')[0]);
-    }
-
-    return daysOfWeek.map(dateStr => {
-      // Filtrar logs de este día específico
-      const dayLogs = rawData.filter(log => log.dateString === dateStr);
+  // 1. Volumen y Duracion Semanal
+  useEffect(() => {
+    const fetchWeeklyData = async () => {
+      if (!user || !rawData.length) return;
       
-      const dayVolume = dayLogs.reduce((acc, log) => {
-        const weight = parseFloat(log.weight) || 0;
-        const reps = parseInt(log.reps, 10) || 0;
-        const weightInTarget = convertWeight(weight, log.unit, unitMode);
-        return acc + (weightInTarget * reps);
-      }, 0);
+      const sunday = getSunday(volumeSelectedDate);
+      const datesOfWeek = [];
+      const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+      
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(sunday);
+        d.setUTCDate(sunday.getUTCDate() + i);
+        datesOfWeek.push(d.toISOString().split('T')[0]);
+      }
 
-      return {
-        day: WEEKDAYS[new Date(dateStr + 'T12:00:00').getDay()],
-        fullDate: dateStr,
-        volume: Math.round(dayVolume)
-      };
-    });
-  }, [rawData, volumeSelectedDate, unitMode]);
+      // obtener duraciones desde firestore
+      const sessionsMap = await getWorkoutSessionsForWeek(user.uid, datesOfWeek);
+
+      const data = datesOfWeek.map(dateStr => {
+        const dayLogs = rawData.filter(log => log.dateString === dateStr);
+        const dayVolume = dayLogs.reduce((acc, log) => {
+          const weight = parseFloat(log.weight) || 0;
+          const reps = parseInt(log.reps, 10) || 0;
+          const weightInTarget = convertWeight(weight, log.unit, unitMode);
+          return acc + (weightInTarget * reps);
+        }, 0);
+
+        const seconds = sessionsMap[dateStr] || 0;
+
+        return {
+          day: WEEKDAYS[new Date(dateStr + 'T12:00:00').getDay()],
+          fullDate: dateStr,
+          volume: Math.round(dayVolume),
+          duration: Math.round(seconds / 60)
+        };
+      });
+
+      setWeeklyVolumeData(data);
+    };
+
+    fetchWeeklyData();
+  }, [user, rawData, volumeSelectedDate, unitMode]);
 
   // 2. Equilibrio Muscular
   const muscleBalanceData = useMemo(() => {
@@ -561,17 +574,29 @@ const ProgressPage = () => {
             </div>
             <div className="flex-1 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyVolumeData}>
+              <ComposedChart data={weeklyVolumeData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis 
                   dataKey="day" 
                   stroke="#9ca3af" 
                   tick={{ fontSize: 12, capitalize: 'true' }} 
                 />
-                <YAxis stroke="#9ca3af" tick={{ fontSize: 10 }} />
+                <YAxis yAxisId="left" stroke="#9ca3af" tick={{ fontSize: 10 }} />
+                <YAxis 
+                  yAxisId="right" 
+                  orientation="right" 
+                  stroke="#fbbf24" 
+                  strokeOpacity={0.6}
+                  tick={{ fontSize: 10, fill: '#fbbf24', fillOpacity: 0.6 }} 
+                  unit=" min" 
+                />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
                   cursor={{ fill: '#374151', opacity: 0.4 }}
+                  formatter={(value, name) => [
+                    name === "Volumen" ? `${value.toLocaleString()} ${unitMode}` : `${value} min`,
+                    name === "Volumen" ? "Volumen" : "Duración"
+                  ]}
                   labelFormatter={(label, payload) => {
                     if (payload && payload.length > 0) {
                       const dateStr = payload[0].payload.fullDate;
@@ -580,8 +605,19 @@ const ProgressPage = () => {
                     return label;
                   }}
                 />
-                <Bar dataKey="volume" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <Bar yAxisId="left" name="Volumen" dataKey="volume" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Line 
+                  yAxisId="right" 
+                  name="Duracion" 
+                  type="monotone" 
+                  dataKey="duration" 
+                  stroke="#fbbf24" 
+                  strokeWidth={2} 
+                  strokeDasharray="5 5" 
+                  strokeOpacity={0.6}
+                  dot={{ r: 4, fill: '#fbbf24', fillOpacity: 0.8, strokeWidth: 0 }} 
+                />
+              </ComposedChart>
             </ResponsiveContainer>
             </div>
             <MarcaAgua userName={user?.displayName || user?.email} />
@@ -695,7 +731,7 @@ const ProgressPage = () => {
 
               {/* Columnas de Meses */}
               {matrixData.map((monthData, mIdx) => (
-                <div key={monthData.monthStr} className={`flex flex-col ${mIdx !== matrixData.length - 1 ? 'mr-2' : ''}`}>
+                <div key={monthData.monthStr} className={`flex flex-col ${mIdx !== matrixData.length - 1 ? 'mr-[2px]' : ''}`}>
                   <div className="h-6 text-center text-[10px] font-bold text-gray-500 uppercase tracking-tighter px-1 mb-1 leading-none flex items-center justify-center">
                     {monthData.monthStr.split('-')[0].slice(-2)}-{monthData.monthStr.split('-')[1]}
                   </div>

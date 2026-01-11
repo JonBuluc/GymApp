@@ -143,22 +143,22 @@ const WorkoutTimer = ({ userId, date }) => {
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-1 bg-gray-800 p-1 rounded border border-gray-600">
+      <div className="flex items-center gap-1 bg-gray-800/50 px-2 h-11 rounded-lg border border-gray-700">
         <input 
           type="number" value={editH} onChange={e => setEditH(e.target.value)} 
-          className="w-8 bg-gray-700 text-white text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+          className="w-9 h-8 bg-gray-700 text-white text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
           placeholder="HH"
         />
         <span className="text-gray-400">:</span>
         <input 
           type="number" value={editM} onChange={e => setEditM(e.target.value)} 
-          className="w-8 bg-gray-700 text-white text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+          className="w-9 h-8 bg-gray-700 text-white text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
           placeholder="MM"
         />
         <span className="text-gray-400">:</span>
         <input 
           type="number" value={editS} onChange={e => setEditS(e.target.value)} 
-          className="w-8 bg-gray-700 text-white text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+          className="w-9 h-8 bg-gray-700 text-white text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
           placeholder="SS"
         />
         <button onClick={saveEdit} className="text-green-400 hover:text-green-300 p-1"><Check size={16} /></button>
@@ -168,7 +168,7 @@ const WorkoutTimer = ({ userId, date }) => {
   }
 
   return (
-    <div className="flex items-center gap-3 bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-700">
+    <div className="flex items-center gap-3 bg-gray-800/50 px-3 h-11 rounded-lg border border-gray-700">
       <button
         onClick={toggleTimer}
         className={`p-2 rounded-full transition-all ${
@@ -181,7 +181,7 @@ const WorkoutTimer = ({ userId, date }) => {
       </button>
       
       <div 
-        className="font-mono text-xl font-bold text-white cursor-pointer hover:text-blue-400 transition-colors flex items-center gap-2 group"
+        className="font-mono text-lg font-bold text-white cursor-pointer hover:text-blue-400 transition-colors flex items-center gap-2 group"
         onClick={startEditing}
         title="Click para editar tiempo manualmente"
       >

@@ -66,13 +66,13 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-      <div className="text-center p-8 bg-gray-800 rounded-lg shadow-xl">
-        <h1 className="text-4xl font-bold mb-2">Gym App</h1>
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-900 text-white p-4">
+      <div className="w-full max-w-md text-center p-6 sm:p-8 bg-gray-800 rounded-2xl shadow-xl border border-gray-700">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-2">RegiTreno</h1>
         <p className="text-gray-400 mb-8">registra tu progreso.</p>
         <button
           onClick={loginWithGoogle}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition duration-300 ease-in-out transform hover:scale-105"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl text-lg sm:text-xl transition duration-300 ease-in-out transform active:scale-95"
         >
           iniciar sesion con google
         </button>
@@ -90,7 +90,7 @@ const LoginPage = () => {
               <select
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
-                className="bg-gray-700 text-white px-3 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 cursor-pointer"
+                className="bg-gray-700 text-white px-2 sm:px-3 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-24 sm:w-32 cursor-pointer text-sm sm:text-base"
               >
                 <option value="+52">🇲🇽 +52</option>
                 <option value="+1">🇺🇸 +1</option>
@@ -102,13 +102,13 @@ const LoginPage = () => {
                 placeholder="55 1234 5678"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                className="bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                className="bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-0 text-sm sm:text-base"
               />
             </div>
             <div id="recaptcha-container" className="mx-auto"></div>
             <button
               onClick={handleSendOtp}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl text-lg transition duration-300 active:scale-95"
             >
               Enviar Código
             </button>
@@ -120,11 +120,11 @@ const LoginPage = () => {
               placeholder="Código de 6 dígitos"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              className="bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-xl"
+              className="w-full bg-gray-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-xl"
             />
             <button
               onClick={handleVerifyOtp}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl text-lg transition duration-300 active:scale-95"
             >
               Verificar
             </button>
