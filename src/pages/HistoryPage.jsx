@@ -6,6 +6,9 @@ import EditSetModal from '../components/workout/EditSetModal';
 import SessionCard from '../components/workout/SessionCard';
 import BulkEditModal from '../components/workout/BulkEditModal';
 import {bulkUpdateMuscleGroup} from '../services/firestore';
+import DatePicker from '../components/ui/DatePicker';
+import CardioSessionCard from '../components/cardio/CardioSessionCard';
+import { obtenerHistorialCardio, obtenerTodoHistorialCardio } from '../services/lecturasCardio';
 // funcion auxiliar para recalcular totales de sesion
 const recalculateSession = (session, updatedExercises) => {
   let totalVolumeKg = 0;
@@ -35,7 +38,8 @@ const recalculateSession = (session, updatedExercises) => {
 
 const HistoryPage = () => {
   const { user } = useAuth();
-  const [historyData, setHistoryData] = useState([]);
+  const [sesionFuerza, setSesionFuerza] = useState([]);
+  const [sesionCardio, setSesionCardio] = useState([]);
   const [displayUnit, setDisplayUnit] = useState('kg');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -56,6 +60,9 @@ const HistoryPage = () => {
   const [editingSet, setEditingSet] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bulkEdit, setBulkEdit] = useState(null); // { type: 'session' | 'exercise', targetName: string, sessionDate: string, setIds: [] }
+
+  const [todosLosCardios, setTodosLosCardios] = useState([]);
+  const [cardiosCargados, setCardiosCargados] = useState(false);
 
   // cargar grupos musculares al inicio
   useEffect(() => {
@@ -79,38 +86,110 @@ const HistoryPage = () => {
     updateExercises();
   }, [user, filterMuscle]);
 
-  const loadData = useCallback(async (pageIndex, cursorToUse) => {
+  const cargarDatos = useCallback(async (indicePagina, cursorUsar) => {
     setIsLoading(true);
     try {
-      const filters = {
+      const filtrosConsulta = {
         date: filterDate,
         muscle: filterMuscle,
         exercise: filterExercise
       };
 
-      const { sessions, lastDoc: nextDoc } = await getWorkoutHistory(user.uid, cursorToUse, filters);
+      const esCursorCardio = cursorUsar && cursorUsar.isFakeCardioCursor;
+
+      const promesaFuerza = esCursorCardio 
+        ? Promise.resolve({ sessions: [], lastDoc: null }) 
+        : getWorkoutHistory(user.uid, cursorUsar, filtrosConsulta);
+
+      let promesaCardio;
+      if (filterDate) {
+        promesaCardio = obtenerHistorialCardio(user.uid, filterDate);
+      } else {
+        if (!cardiosCargados) {
+          promesaCardio = obtenerTodoHistorialCardio(user.uid);
+        } else {
+          promesaCardio = Promise.resolve(todosLosCardios);
+        }
+      }
       
-      setHistoryData(sessions);
+      const [resultadoFuerza, resultadoCardio] = await Promise.all([promesaFuerza, promesaCardio]);
+      const { sessions, lastDoc: siguienteDocumento } = resultadoFuerza;
       
+      setSesionFuerza(sessions);
+      
+      let cardiosParaMostrar = [];
+      let nuevoSiguienteDocumento = siguienteDocumento;
+
+      if (filterDate) {
+        cardiosParaMostrar = resultadoCardio;
+      } else if (filterMuscle !== 'all' || filterExercise !== 'all') {
+        cardiosParaMostrar = [];
+      } else {
+        let cardiosBase = cardiosCargados ? todosLosCardios : resultadoCardio;
+        if (!cardiosCargados) {
+           setTodosLosCardios(resultadoCardio);
+           setCardiosCargados(true);
+        }
+
+        const fechaTope = cursorUsar 
+          ? (esCursorCardio ? cursorUsar.lastCardioDate : cursorUsar.data().dateString) 
+          : null;
+
+        if (sessions.length > 0) {
+          const ultimaFecha = sessions[sessions.length - 1].date;
+          cardiosParaMostrar = cardiosBase.filter(c => {
+             const enRangoSuperior = indicePagina === 0 ? true : (c.fechaString < fechaTope);
+             const enRangoInferior = c.fechaString >= ultimaFecha;
+             return enRangoSuperior && enRangoInferior;
+          });
+          
+          // si quedan cardios más antiguos pero no hay historial de fuerza, creamos un cursor virtual de cardio
+          if (!siguienteDocumento) {
+            const cardiosRestantes = cardiosBase.filter(c => c.fechaString < ultimaFecha);
+            if (cardiosRestantes.length > 0) {
+              nuevoSiguienteDocumento = { isFakeCardioCursor: true, lastCardioDate: ultimaFecha };
+            }
+          }
+        } else {
+          // ya no hay historial de fuerza, paginamos exclusivamente usando fechas de cardio
+          const cardiosRestantes = cardiosBase.filter(c => {
+             return indicePagina === 0 ? true : (c.fechaString < fechaTope);
+          });
+          
+          const fechasUnicas = [...new Set(cardiosRestantes.map(c => c.fechaString))].slice(0, 5);
+          cardiosParaMostrar = cardiosRestantes.filter(c => fechasUnicas.includes(c.fechaString));
+          
+          if (fechasUnicas.length > 0) {
+             const ultimaFechaCardio = fechasUnicas[fechasUnicas.length - 1];
+             const hayMas = cardiosRestantes.some(c => c.fechaString < ultimaFechaCardio);
+             if (hayMas) {
+               nuevoSiguienteDocumento = { isFakeCardioCursor: true, lastCardioDate: ultimaFechaCardio };
+             }
+          }
+        }
+      }
+      
+      setSesionCardio(cardiosParaMostrar);
+
       // guardar el cursor para la siguiente pagina
       setCursors(prev => {
-        const newCursors = [...prev];
-        newCursors[pageIndex + 1] = nextDoc;
-        return newCursors;
+        const nuevosCursores = [...prev];
+        nuevosCursores[indicePagina + 1] = nuevoSiguienteDocumento;
+        return nuevosCursores;
       });
     } catch (error) {
-      console.error("Error loading history", error);
+      console.error("error al cargar el historial", error);
     } finally {
       setIsLoading(false);
     }
-  }, [user, filterDate, filterMuscle, filterExercise]);
+  }, [user, filterDate, filterMuscle, filterExercise, cardiosCargados, todosLosCardios]);
 
   // cargar historial cuando cambian los filtros
   useEffect(() => {
     if (user) {
       setPage(0);
       setCursors([null]);
-      loadData(0, null);
+      cargarDatos(0, null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, filterDate, filterMuscle, filterExercise]);
@@ -119,7 +198,7 @@ const HistoryPage = () => {
     const nextPage = page + 1;
     if (cursors[nextPage] !== undefined) {
       setPage(nextPage);
-      loadData(nextPage, cursors[nextPage]);
+      cargarDatos(nextPage, cursors[nextPage]);
     }
   };
 
@@ -127,7 +206,7 @@ const HistoryPage = () => {
     const prevPage = page - 1;
     if (prevPage >= 0) {
       setPage(prevPage);
-      loadData(prevPage, cursors[prevPage]);
+      cargarDatos(prevPage, cursors[prevPage]);
     }
   };
 
@@ -143,7 +222,7 @@ const HistoryPage = () => {
       await updateWorkoutSet(setId, updatedFields);
       
       // actualizacion local optimista
-      setHistoryData(prevData => {
+      setSesionFuerza(prevData => {
         return prevData.map(session => {
           // verificar si el set pertenece a esta sesion
           const setIndex = session.exercises.findIndex(ex => ex.id === setId);
@@ -169,7 +248,7 @@ const HistoryPage = () => {
       await deleteWorkoutSet(setId);
 
       // actualizacion local optimista
-      setHistoryData(prevData => {
+      setSesionFuerza(prevData => {
         return prevData.map(session => {
            const setExists = session.exercises.some(ex => ex.id === setId);
            if (!setExists) return session;
@@ -194,13 +273,13 @@ const HistoryPage = () => {
     if (data.type === 'rename_exercise') {
       if (!newExercise) return;
       
-      // Actualizar todas las series
+      // actualizar todas las series
       await Promise.all(data.setIds.map(id => 
         updateWorkoutSet(id, { exercise: newExercise, muscleGroup: newMuscle })
       ));
 
-      // Actualizacion optimista local
-      setHistoryData(prev => prev.map(session => {
+      // actualizacion optimista local
+      setSesionFuerza(prev => prev.map(session => {
         if (session.date !== data.sessionDate) return session;
         
         const updatedExercises = session.exercises.map(ex => 
@@ -211,8 +290,8 @@ const HistoryPage = () => {
     } else {
       await bulkUpdateMuscleGroup(data.setIds, newMuscle);
       
-      // Actualizacion optimista local
-      setHistoryData(prev => prev.map(session => {
+      // actualizacion optimista local
+      setSesionFuerza(prev => prev.map(session => {
         if (session.date !== data.sessionDate) return session;
         
         const updatedExercises = session.exercises.map(ex => 
@@ -234,8 +313,8 @@ const HistoryPage = () => {
     try {
       await Promise.all(data.setIds.map(id => deleteWorkoutSet(id)));
       
-      // Actualizacion optimista local
-      setHistoryData(prev => prev.map(session => {
+      // actualizacion optimista local
+      setSesionFuerza(prev => prev.map(session => {
         if (session.date !== data.sessionDate) return session;
         
         const updatedExercises = session.exercises.filter(ex => !data.setIds.includes(ex.id));
@@ -271,17 +350,14 @@ const HistoryPage = () => {
           <div>
             <label className="text-xs text-gray-400 block mb-1">Fecha</label>
             <div className="relative flex items-center">
-              <input 
-                type="date" 
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
-                style={{ colorScheme: 'dark' }}
+              <DatePicker 
+                fechaSeleccionada={filterDate}
+                alCambiarFecha={setFilterDate}
               />
               {filterDate && (
                 <button 
                   onClick={() => setFilterDate('')}
-                  className="absolute right-10 text-gray-400 hover:text-white"
+                  className="absolute right-10 text-gray-400 hover:text-white z-10"
                   title="Limpiar fecha"
                 >
                   ✕
@@ -316,34 +392,50 @@ const HistoryPage = () => {
 
       {/* lista de sesiones */}
       <div className="space-y-4">
-        {historyData.map((session, idx) => {
+        {Array.from(new Set([
+          ...sesionFuerza.map(sesionUnica => sesionUnica.date),
+          ...sesionCardio.map(sesionUnica => sesionUnica.fechaString)
+        ])).sort((fechaA, fechaB) => new Date(fechaB) - new Date(fechaA)).map((fechaIterada) => {
+          const fuerzaDelDia = sesionFuerza.find(sesionUnica => sesionUnica.date === fechaIterada);
+          const cardioDelDia = sesionCardio.filter(sesionUnica => sesionUnica.fechaString === fechaIterada);
+
           return (
-            <SessionCard
-              key={session.date} 
-              session={session}
-              displayUnit={displayUnit}
-              onEditSet={handleEditClick}
-              onBulkEdit={handleBulkEditRequest}
-              userName={user?.displayName || user?.email}
-            />
+            <div key={fechaIterada} className="space-y-4">
+              {fuerzaDelDia && (
+                <SessionCard
+                  session={fuerzaDelDia}
+                  displayUnit={displayUnit}
+                  onEditSet={handleEditClick}
+                  onBulkEdit={handleBulkEditRequest}
+                  userName={user?.displayName || user?.email}
+                />
+              )}
+              {cardioDelDia.length > 0 && (
+                <CardioSessionCard
+                  sesionesDelDia={cardioDelDia}
+                  fechaSesion={fechaIterada}
+                  nombreUsuario={user?.displayName || user?.email}
+                />
+              )}
+            </div>
           );
         })}
         
-        {!isLoading && historyData.length === 0 && (
+        {!isLoading && sesionFuerza.length === 0 && sesionCardio.length === 0 && (
           <div className="text-center py-10 text-gray-500 flex flex-col items-center">
-            <p className="mb-4">{isFiltering ? "No se encontraron resultados." : "No hay entrenamientos registrados."}</p>
+            <p className="mb-4">{isFiltering ? "no se encontraron resultados." : "no hay entrenamientos en esta fecha."}</p>
             <button 
-              onClick={() => loadData(0, null)}
+              onClick={() => cargarDatos(0, null)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Recargar
+              recargar
             </button>
           </div>
         )}
       </div>
 
       {/* footer paginacion manual */}
-      {historyData.length > 0 && (
+      {(sesionFuerza.length > 0 || sesionCardio.length > 0) && (
         <div className="flex justify-between items-center mt-6 bg-gray-800 p-4 rounded-xl border border-gray-700">
           <button 
             onClick={handlePrevPage} 

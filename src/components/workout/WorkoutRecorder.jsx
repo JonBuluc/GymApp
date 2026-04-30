@@ -5,6 +5,7 @@ import Combobox from '../ui/Combobox';
 import HelpMarker from '../ui/HelpMarker';
 import SetRow from './SetRow';
 import WorkoutTimer from './WorkoutTimer';
+import DatePicker from '../ui/DatePicker';
 
 const WorkoutRecorder = ({ 
   date, 
@@ -148,13 +149,10 @@ const WorkoutRecorder = ({
       <div className="flex flex-row justify-between items-center gap-2 sm:gap-4">
         <WorkoutTimer userId={user?.uid} date={date} />
         
-        <HelpMarker text="Fecha del entrenamiento" className="w-auto">
-          <input 
-            type="date" 
-            value={date} 
-            onChange={(e) => setDate(e.target.value)}
-            className="bg-gray-700 text-white px-3 h-11 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-            style={{ colorScheme: 'dark' }}
+        <HelpMarker text="Fecha del entrenamiento" className="w-40 sm:w-48">
+          <DatePicker 
+            fechaSeleccionada={date} 
+            alCambiarFecha={setDate} 
           />
         </HelpMarker>
       </div>

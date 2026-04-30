@@ -7,6 +7,10 @@ import BulkEditModal from "../components/workout/BulkEditModal";
 import HelpMarker from "../components/ui/HelpMarker";
 import StatsPanel from "../components/workout/StatsPanel";
 import { getWorkoutHistory, updateWorkoutSet, deleteWorkoutSet, bulkUpdateMuscleGroup, getMuscleGroups, getExerciseStats } from "../services/firestore";
+import CardioRecorder from "../components/cardio/CardioRecorder";
+import CardioStatsPanel from "../components/cardio/CardioStatsPanel";
+import CardioSessionCard from "../components/cardio/CardioSessionCard";
+import { obtenerHistorialCardio, obtenerRecordsCardio } from "../services/lecturasCardio";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -27,6 +31,14 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [unit, setUnit] = useState('kg');
+
+  const [modoEntrenamiento, setModoEntrenamiento] = useState('fuerza');
+
+  // estados adicionales para cardio
+  const [historialCardio, setHistorialCardio] = useState([]);
+  const [recordsCardio, setRecordsCardio] = useState(null);
+  const [tipoCardioActivo, setTipoCardioActivo] = useState("");
+  const [nombreCardioActivo, setNombreCardioActivo] = useState("");
 
   // Cargar sesion del dia seleccionado
   useEffect(() => {
@@ -76,6 +88,38 @@ const Dashboard = () => {
     return () => clearTimeout(timeoutId);
   }, [user, currentExercise, currentMuscle, refreshTrigger]);
 
+  // cargar historial cardio
+  useEffect(() => {
+    const cargarDatosCardio = async () => {
+      if (user && selectedDate && modoEntrenamiento === 'cardio') {
+        try {
+          const historial = await obtenerHistorialCardio(user.uid, selectedDate);
+          setHistorialCardio(historial);
+        } catch (errorConsulta) {
+          console.error("error cargando historial de cardio", errorConsulta);
+        }
+      }
+    };
+    cargarDatosCardio();
+  }, [user, selectedDate, refreshTrigger, modoEntrenamiento]);
+
+  // cargar estadisticas cardio
+  useEffect(() => {
+    const cargarRecordsCardio = async () => {
+      if (user && tipoCardioActivo && nombreCardioActivo && modoEntrenamiento === 'cardio') {
+        try {
+          const records = await obtenerRecordsCardio(user.uid, tipoCardioActivo, nombreCardioActivo);
+          setRecordsCardio(records);
+        } catch (errorConsulta) {
+          console.error("error cargando records de cardio", errorConsulta);
+        }
+      } else {
+        setRecordsCardio(null);
+      }
+    };
+    cargarRecordsCardio();
+  }, [user, tipoCardioActivo, nombreCardioActivo, refreshTrigger, modoEntrenamiento]);
+
   const handleEditSet = (set) => {
     setEditingSet(set);
     setIsModalOpen(true);
@@ -124,6 +168,26 @@ const Dashboard = () => {
 
   return (
     <div className="py-6">
+        {/* selector de modo de entrenamiento */}
+        <div className="max-w-3xl mx-auto px-4 mb-6">
+          <div className="flex bg-gray-800 p-1 rounded-xl border border-gray-700">
+            <button
+              onClick={() => setModoEntrenamiento('fuerza')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-colors ${modoEntrenamiento === 'fuerza' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              Fuerza
+            </button>
+            <button
+              onClick={() => setModoEntrenamiento('cardio')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-colors ${modoEntrenamiento === 'cardio' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              Cardio
+            </button>
+          </div>
+        </div>
+
+        {modoEntrenamiento === 'fuerza' ? (
+          <>
         <WorkoutRecorder 
           date={selectedDate} 
           setDate={setSelectedDate} 
@@ -167,6 +231,35 @@ const Dashboard = () => {
               />
             </HelpMarker>
           </div>
+        )}
+          </>
+        ) : (
+          <>
+            <CardioRecorder 
+              fechaSeleccionada={selectedDate}
+              funcionCambiarFecha={setSelectedDate}
+              funcionRecargar={() => setRefreshTrigger(prev => prev + 1)}
+              tipoActivo={tipoCardioActivo}
+              funcionCambiarTipo={setTipoCardioActivo}
+              nombreActivo={nombreCardioActivo}
+              funcionCambiarNombre={setNombreCardioActivo}
+            />
+            {nombreCardioActivo && (
+              <div className="max-w-3xl mx-auto px-4 mt-6">
+                <div className="mb-2">
+                  <HelpMarker text={<>Estadísticas rápidas y récords históricos de tu actividad cardiovascular actual.</>}>
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Referencia de Cardio</h3>
+                  </HelpMarker>
+                </div>
+                <CardioStatsPanel sesionReciente={recordsCardio?.sesionReciente} recordsCardio={recordsCardio} />
+              </div>
+            )}
+            {historialCardio.length > 0 && (
+              <div className="max-w-3xl mx-auto px-4 mt-8">
+                <CardioSessionCard sesionesDelDia={historialCardio} fechaSesion={selectedDate} nombreUsuario={user?.displayName || user?.email} />
+              </div>
+            )}
+          </>
         )}
 
         <EditSetModal 

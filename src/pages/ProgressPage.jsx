@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getAnalyticsData, getMuscleGroups, getExerciseCatalog, getWorkoutSessionsForWeek } from '../services/firestore';
+import { obtenerAnaliticasCardio } from '../services/lecturasCardio';
 import MultiSelect from '../components/ui/MultiSelect';
 import WeekPicker from '../components/ui/WeekPicker';
 import { downloadAsPNG } from '../utils/downloadImage';
@@ -59,7 +60,8 @@ const getLocalDateStr = (date = new Date()) => {
 const ProgressPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [rawData, setRawData] = useState([]);
+  const [datosCrudosFuerza, setDatosCrudosFuerza] = useState([]);
+  const [datosCrudosCardio, setDatosCrudosCardio] = useState([]);
 
   // referencias para exportacion
   const fullPageRef = useRef(null);
@@ -168,29 +170,34 @@ const ProgressPage = () => {
 
   // cargar data cruda
   useEffect(() => {
-    // cargar siempre todo el historial (desde 2020) para que las graficas secundarias no dependan del filtro
-    const fetchData = async () => {
+    // cargar siempre todo el historial para que las graficas secundarias no dependan del filtro
+    const cargarDatosAnaliticas = async () => {
       if (user) {
         setLoading(true);
         try {
-          const data = await getAnalyticsData(user.uid, '2020-01-01', getLocalDateStr());
-          setRawData(data);
-        } catch (error) {
-          console.error("Error loading analytics:", error);
+          const promesaFuerza = getAnalyticsData(user.uid, '2020-01-01', getLocalDateStr());
+          const promesaCardio = obtenerAnaliticasCardio(user.uid, '2020-01-01', getLocalDateStr());
+          const [resultadosFuerza, resultadosCardio] = await Promise.all([promesaFuerza, promesaCardio]);
+          setDatosCrudosFuerza(resultadosFuerza);
+          setDatosCrudosCardio(resultadosCardio);
+        } catch (errorCarga) {
+          console.error("error al cargar analiticas:", errorCarga);
         } finally {
           setLoading(false);
         }
       }
     };
-    fetchData();
+    cargarDatosAnaliticas();
   }, [user]);
 
   // calcular meses disponibles para constancia
   const availableMonths = useMemo(() => {
-    if (!rawData.length) return [];
-    const months = new Set(rawData.map(d => d.dateString.slice(0, 7))); // YYYY-MM
-    return Array.from(months).sort().reverse();
-  }, [rawData]);
+    if (!datosCrudosFuerza.length && !datosCrudosCardio.length) return [];
+    const mesesUnicos = new Set();
+    datosCrudosFuerza.forEach(datoFuerza => mesesUnicos.add(datoFuerza.dateString.slice(0, 7)));
+    datosCrudosCardio.forEach(datoCardio => mesesUnicos.add(datoCardio.fechaString.slice(0, 7)));
+    return Array.from(mesesUnicos).sort().reverse();
+  }, [datosCrudosFuerza, datosCrudosCardio]);
 
   // inicializar meses seleccionados (ultimos 3)
   useEffect(() => {
@@ -215,11 +222,11 @@ const ProgressPage = () => {
 
   // procesamiento de datos para la grafica
   const chartData = useMemo(() => {
-    if (!rawData.length || selectedExercises.length === 0) return [];
+    if (!datosCrudosFuerza.length || selectedExercises.length === 0) return [];
 
     // filtrar por ejercicios seleccionados
     // Y filtrar por rango de fecha (SOLO afecta a esta grafica)
-    const filtered = rawData.filter(d => {
+    const filtered = datosCrudosFuerza.filter(d => {
       const key = `${d.exercise} (${d.muscleGroup})`;
       return selectedExercises.includes(key) &&
         d.dateString >= dateRange.start &&
@@ -257,12 +264,12 @@ const ProgressPage = () => {
     });
 
     return Object.values(groupedByDate).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [rawData, selectedExercises, unitMode, metricMode, dateRange]);
+  }, [datosCrudosFuerza, selectedExercises, unitMode, metricMode, dateRange]);
 
   // 1. Volumen y Duracion Semanal
   useEffect(() => {
-    const fetchWeeklyData = async () => {
-      if (!user || !rawData.length) return;
+    const cargarDatosSemanales = async () => {
+      if (!user || !datosCrudosFuerza.length) return;
       
       const sunday = getSunday(volumeSelectedDate);
       const datesOfWeek = [];
@@ -278,7 +285,7 @@ const ProgressPage = () => {
       const sessionsMap = await getWorkoutSessionsForWeek(user.uid, datesOfWeek);
 
       const data = datesOfWeek.map(dateStr => {
-        const dayLogs = rawData.filter(log => log.dateString === dateStr);
+        const dayLogs = datosCrudosFuerza.filter(log => log.dateString === dateStr);
         const dayVolume = dayLogs.reduce((acc, log) => {
           const weight = parseFloat(log.weight) || 0;
           const reps = parseInt(log.reps, 10) || 0;
@@ -299,12 +306,12 @@ const ProgressPage = () => {
       setWeeklyVolumeData(data);
     };
 
-    fetchWeeklyData();
-  }, [user, rawData, volumeSelectedDate, unitMode]);
+    cargarDatosSemanales();
+  }, [user, datosCrudosFuerza, volumeSelectedDate, unitMode]);
 
   // 2. Equilibrio Muscular
   const muscleBalanceData = useMemo(() => {
-    if (!rawData.length) return [];
+    if (!datosCrudosFuerza.length) return [];
     const grouped = {};
     
     const end = new Date();
@@ -326,7 +333,7 @@ const ProgressPage = () => {
     }
     const startDateStr = start.toISOString().split('T')[0];
     
-    rawData.forEach(log => {
+    datosCrudosFuerza.forEach(log => {
       if (log.isWarmup || log.dateString < startDateStr) return;
       const muscle = log.muscleGroup ? log.muscleGroup.charAt(0).toUpperCase() + log.muscleGroup.slice(1) : 'Otros';
       if (!grouped[muscle]) grouped[muscle] = 0;
@@ -347,81 +354,109 @@ const ProgressPage = () => {
       A: Math.round(grouped[key]),
       fullMark: Math.max(...Object.values(grouped))
     }));
-  }, [rawData, radarMetric, unitMode, radarTimeRange]);
+  }, [datosCrudosFuerza, radarMetric, unitMode, radarTimeRange]);
 
   // 3. Constancia (Matriz Mensual Partida)
-  const matrixData = useMemo(() => {
-    // Mapa de datos por dia
-    const dayDataMap = {};
-    rawData.forEach(log => {
-      if (!log.isWarmup) {
-        const d = log.dateString;
-        if (!dayDataMap[d]) dayDataMap[d] = { count: 0, volume: 0 };
-        dayDataMap[d].count += 1;
+  const matrizDatosConstancia = useMemo(() => {
+    const mapaDiasAnaliticas = {};
+    
+    datosCrudosFuerza.forEach(registroFuerza => {
+      if (!registroFuerza.isWarmup) {
+        const diaFuerza = registroFuerza.dateString;
+        if (!mapaDiasAnaliticas[diaFuerza]) {
+          mapaDiasAnaliticas[diaFuerza] = { tieneFuerza: false, tieneCardio: false, cantidadSeries: 0, volumenTotal: 0, distanciaTotal: 0, duracionTotalSegundos: 0 };
+        }
+        mapaDiasAnaliticas[diaFuerza].tieneFuerza = true;
+        mapaDiasAnaliticas[diaFuerza].cantidadSeries += 1;
         
-        const weight = parseFloat(log.weight) || 0;
-        const reps = parseInt(log.reps, 10) || 0;
-        const weightInTarget = convertWeight(weight, log.unit, unitMode);
-        dayDataMap[d].volume += weightInTarget * reps;
+        const pesoFuerza = parseFloat(registroFuerza.weight) || 0;
+        const repeticionesFuerza = parseInt(registroFuerza.reps, 10) || 0;
+        const pesoConvertido = convertWeight(pesoFuerza, registroFuerza.unit, unitMode);
+        mapaDiasAnaliticas[diaFuerza].volumenTotal += pesoConvertido * repeticionesFuerza;
       }
     });
 
-    // Ordenar meses seleccionados cronologicamente
-    const sortedMonths = [...constancyMonths].sort();
-
-    return sortedMonths.map(monthStr => {
-      const [year, month] = monthStr.split('-').map(Number);
-      const daysInMonth = new Date(year, month, 0).getDate();
+    datosCrudosCardio.forEach(registroCardio => {
+      const diaCardio = registroCardio.fechaString;
+      if (!mapaDiasAnaliticas[diaCardio]) {
+        mapaDiasAnaliticas[diaCardio] = { tieneFuerza: false, tieneCardio: false, cantidadSeries: 0, volumenTotal: 0, distanciaTotal: 0, duracionTotalSegundos: 0 };
+      }
+      mapaDiasAnaliticas[diaCardio].tieneCardio = true;
       
-      // Generar 16 filas
-      const rows = [];
-      for (let i = 0; i < 16; i++) {
-        // Columna A: Dia 1-15
-        const dayA = i + 1;
-        let cellA = null;
-        if (dayA <= 15) {
-          const dateStrA = `${monthStr}-${String(dayA).padStart(2, '0')}`;
-          cellA = {
-            date: dateStrA,
-            day: dayA,
-            ...dayDataMap[dateStrA] || { count: 0, volume: 0 }
+      const distanciaCardio = parseFloat(registroCardio.distancia) || 0;
+      const distanciaEnKilometros = registroCardio.unidadDistancia === 'km' ? distanciaCardio : distanciaCardio / 1000;
+      
+      mapaDiasAnaliticas[diaCardio].distanciaTotal += distanciaEnKilometros;
+      mapaDiasAnaliticas[diaCardio].duracionTotalSegundos += (parseInt(registroCardio.duracionSegundos, 10) || 0);
+    });
+
+    // calcular maximos para la intensidad del color, considerando solo los meses seleccionados
+    let maxSets = 0;
+    let maxDuration = 0;
+
+    Object.keys(mapaDiasAnaliticas).forEach(dateKey => {
+      const monthOfDate = dateKey.slice(0, 7);
+      if (constancyMonths.includes(monthOfDate)) {
+        const dayData = mapaDiasAnaliticas[dateKey];
+        // solo considerar dias de una sola actividad para no sesgar la escala
+        if (dayData.tieneFuerza && !dayData.tieneCardio) {
+          if (dayData.cantidadSeries > maxSets) {
+            maxSets = dayData.cantidadSeries;
+          }
+        }
+        if (dayData.tieneCardio && !dayData.tieneFuerza) {
+          if (dayData.duracionTotalSegundos > maxDuration) {
+            maxDuration = dayData.duracionTotalSegundos;
+          }
+        }
+      }
+    });
+    const finalMaxSets = maxSets || 1;
+    const finalMaxDuration = maxDuration || 1;
+    const mesesOrdenadosCronologia = [...constancyMonths].sort();
+
+    return mesesOrdenadosCronologia.map(mesCadena => {
+      const partesDelMes = mesCadena.split('-');
+      const anioExtraido = parseInt(partesDelMes[0], 10);
+      const mesExtraido = parseInt(partesDelMes[1], 10);
+      const totalDiasMes = new Date(anioExtraido, mesExtraido, 0).getDate();
+      
+      const filasGeneradas = [];
+      for (let indiceFila = 0; indiceFila < 16; indiceFila++) {
+        const diaUno = indiceFila + 1;
+        let celdaUno = null;
+        if (diaUno <= 15) {
+          const fechaEstructuradaUno = `${mesCadena}-${String(diaUno).padStart(2, '0')}`;
+          celdaUno = {
+            date: fechaEstructuradaUno,
+            day: diaUno,
+            ...(mapaDiasAnaliticas[fechaEstructuradaUno] || { tieneFuerza: false, tieneCardio: false, cantidadSeries: 0, volumenTotal: 0, distanciaTotal: 0, duracionTotalSegundos: 0 })
           };
         }
 
-        // Columna B: Dia 16-31
-        const dayB = i + 16;
-        let cellB = null;
-        if (dayB <= daysInMonth) {
-          const dateStrB = `${monthStr}-${String(dayB).padStart(2, '0')}`;
-          cellB = {
-            date: dateStrB,
-            day: dayB,
-            ...dayDataMap[dateStrB] || { count: 0, volume: 0 }
+        const diaDos = indiceFila + 16;
+        let celdaDos = null;
+        if (diaDos <= totalDiasMes) {
+          const fechaEstructuradaDos = `${mesCadena}-${String(diaDos).padStart(2, '0')}`;
+          celdaDos = {
+            date: fechaEstructuradaDos,
+            day: diaDos,
+            ...(mapaDiasAnaliticas[fechaEstructuradaDos] || { tieneFuerza: false, tieneCardio: false, cantidadSeries: 0, volumenTotal: 0, distanciaTotal: 0, duracionTotalSegundos: 0 })
           };
         }
 
-        rows.push({ cellA, cellB });
+        filasGeneradas.push({ celdaUno, celdaDos });
       }
 
       return {
-        monthLabel: new Date(year, month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
-        monthStr,
-        rows
+        monthLabel: new Date(anioExtraido, mesExtraido - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
+        monthStr: mesCadena, // YYYY-MM
+        rows: filasGeneradas,
+        maxSets: finalMaxSets,
+        maxDuration: finalMaxDuration,
       };
     });
-  }, [rawData, constancyMonths, unitMode]);
-
-  // calcular valor maximo de series para el gradiente de color
-  const maxIntensity = useMemo(() => {
-    let max = 0;
-    matrixData.forEach(month => {
-      month.rows.forEach(row => {
-        if (row.cellA?.count > max) max = row.cellA.count;
-        if (row.cellB?.count > max) max = row.cellB.count;
-      });
-    });
-    return max || 1; // evitar division por cero
-  }, [matrixData]);
+  }, [datosCrudosFuerza, datosCrudosCardio, constancyMonths, unitMode]);
 
   const handleDayHover = (e, day) => {
     const rect = e.target.getBoundingClientRect();
@@ -691,7 +726,7 @@ const ProgressPage = () => {
         {/* Constancia (Matriz Mensual Partida) */}
         <HelpMarker text="Mapa de calor de tus días de entrenamiento">
         <div ref={heatmapRef} className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg relative">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
             <h3 className="text-lg font-bold text-gray-300 pt-[2px]">Constancia Mensual</h3>
             <div className="flex items-center gap-2 w-full md:w-auto">
               <div className="flex-1 md:w-72">
@@ -715,59 +750,77 @@ const ProgressPage = () => {
             </div>
           </div>
           
+          <div className="flex flex-wrap items-center gap-4 mb-4 text-xs text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm bg-blue-500 opacity-80"></div>
+              <span>Fuerza</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm bg-green-500 opacity-80"></div>
+              <span>Cardio</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm bg-gradient-to-br from-blue-500 to-green-500 opacity-80"></div>
+              <span>Ambos</span>
+            </div>
+          </div>
+
           <div className="overflow-x-auto pb-2">
             <div className="flex min-w-max">
               {/* Columna de Etiquetas de Fila */}
               <div className="flex flex-col mr-2">
                 <div className="h-6 mb-1" /> {/* Espaciador Header alineado con meses */}
                 <div className="flex flex-col gap-[2px]">
-                  {Array.from({ length: 16 }).map((_, i) => (
-                    <div key={i} className="h-7 w-8 flex items-center justify-end text-[10px] text-gray-500 font-mono leading-none">
-                      {i === 15 ? '31' : `${i + 1}/${i + 16}`}
+                  {Array.from({ length: 16 }).map((_, indiceFilaEtiqueta) => (
+                    <div key={indiceFilaEtiqueta} className="h-7 w-8 flex items-center justify-end text-[10px] text-gray-500 font-mono leading-none">
+                      {indiceFilaEtiqueta === 15 ? '31' : `${indiceFilaEtiqueta + 1}/${indiceFilaEtiqueta + 16}`}
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Columnas de Meses */}
-              {matrixData.map((monthData, mIdx) => (
-                <div key={monthData.monthStr} className={`flex flex-col ${mIdx !== matrixData.length - 1 ? 'mr-[2px]' : ''}`}>
-                  <div className="h-6 text-center text-[10px] font-bold text-gray-500 uppercase tracking-tighter px-1 mb-1 leading-none flex items-center justify-center">
-                    {monthData.monthStr.split('-')[0].slice(-2)}-{monthData.monthStr.split('-')[1]}
+              {matrizDatosConstancia.map((mesDatosConstancia, indiceMesIterado) => {
+                const { maxSets, maxDuration } = mesDatosConstancia;
+                return (
+                  <div key={mesDatosConstancia.monthStr} className={`flex flex-col ${indiceMesIterado !== matrizDatosConstancia.length - 1 ? 'mr-[2px]' : ''}`}>
+                    <div className="h-6 text-center text-[10px] font-bold text-gray-500 uppercase tracking-tighter px-1 mb-1 leading-none flex items-center justify-center">
+                      {mesDatosConstancia.monthStr.split('-')[0].slice(-2)}-{mesDatosConstancia.monthStr.split('-')[1]}
+                    </div>
+                    <div className="grid grid-cols-2 gap-[2px]">
+                      {mesDatosConstancia.rows.map((filaDoble, indiceFilaIterada) => {
+                        const getCellProps = (celdaDia) => {
+                          const props = {
+                            className: "w-7 rounded-sm cursor-pointer hover:ring-1 hover:ring-white/30 transition-all duration-200",
+                            style: { aspectRatio: '1/1' }
+                          };
+                          if (!celdaDia) {
+                            props.className += " opacity-0 pointer-events-none";
+                          } else if (celdaDia.tieneFuerza && celdaDia.tieneCardio) {
+                            props.className += ' bg-gradient-to-br from-blue-500 to-green-500';
+                          } else if (celdaDia.tieneFuerza) {
+                            const intensity = Math.min(celdaDia.cantidadSeries / maxSets, 1);
+                            props.style.backgroundColor = `hsl(210, 85%, ${85 - (intensity * 50)}%)`;
+                          } else if (celdaDia.tieneCardio) {
+                            const intensity = Math.min(celdaDia.duracionTotalSegundos / maxDuration, 1);
+                            props.style.backgroundColor = `hsl(140, 70%, ${70 - (intensity * 40)}%)`;
+                          } else {
+                            props.className += ' bg-gray-700/40';
+                          }
+                          return props;
+                        };
+
+                        return (
+                          <React.Fragment key={indiceFilaIterada}>
+                            <div {...getCellProps(filaDoble.celdaUno)} onMouseEnter={(e) => filaDoble.celdaUno && handleDayHover(e, filaDoble.celdaUno)} onMouseLeave={() => setTooltipData(null)} />
+                            <div {...getCellProps(filaDoble.celdaDos)} onMouseEnter={(e) => filaDoble.celdaDos && handleDayHover(e, filaDoble.celdaDos)} onMouseLeave={() => setTooltipData(null)} />
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-[2px]">
-                    {monthData.rows.map((row, rIdx) => (
-                      <React.Fragment key={rIdx}>
-                        {/* Celda A (1-15) */}
-                        <div 
-                          className={`w-7 rounded-sm cursor-pointer hover:ring-1 hover:ring-white/30 transition-all duration-200 ${!row.cellA ? 'opacity-0 pointer-events-none' : row.cellA.count === 0 ? 'bg-gray-700/40' : ''}`}
-                          style={{ 
-                            aspectRatio: '1/1',
-                            backgroundColor: row.cellA?.count > 0 
-                              ? `hsl(210, 85%, ${85 - (Math.min(row.cellA.count / maxIntensity, 1) * 50)}%)` 
-                              : undefined
-                          }}
-                          onMouseEnter={(e) => row.cellA && handleDayHover(e, row.cellA)}
-                          onMouseLeave={() => setTooltipData(null)}
-                        />
-                        
-                        {/* Celda B (16-31) */}
-                        <div 
-                          className={`w-7 rounded-sm cursor-pointer hover:ring-1 hover:ring-white/30 transition-all duration-200 ${!row.cellB ? 'opacity-0 pointer-events-none' : row.cellB.count === 0 ? 'bg-gray-700/40' : ''}`}
-                          style={{ 
-                            aspectRatio: '1/1',
-                            backgroundColor: row.cellB?.count > 0 
-                              ? `hsl(210, 85%, ${85 - (Math.min(row.cellB.count / maxIntensity, 1) * 50)}%)` 
-                              : undefined
-                          }}
-                          onMouseEnter={(e) => row.cellB && handleDayHover(e, row.cellB)}
-                          onMouseLeave={() => setTooltipData(null)}
-                        />
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           <MarcaAgua userName={user?.displayName || user?.email} />
@@ -783,14 +836,33 @@ const ProgressPage = () => {
             <div className="font-bold mb-1 border-b border-gray-700 pb-1 text-center">
               {new Date(tooltipData.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
             </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-400">Series:</span>
-              <span className="font-mono font-bold">{tooltipData.count}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-400">Volumen:</span>
-              <span className="font-mono font-bold">{Math.round(tooltipData.volume).toLocaleString()} {unitMode}</span>
-            </div>
+              {tooltipData.tieneFuerza && (
+                <>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-400">Series:</span>
+                    <span className="font-mono font-bold">{tooltipData.cantidadSeries}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-400">Volumen:</span>
+                    <span className="font-mono font-bold">{Math.round(tooltipData.volumenTotal).toLocaleString()} {unitMode}</span>
+                  </div>
+                </>
+              )}
+              {tooltipData.tieneCardio && (
+                <>
+                  <div className={`flex justify-between gap-4 ${tooltipData.tieneFuerza ? 'mt-2 pt-2 border-t border-gray-700/50' : ''}`}>
+                    <span className="text-gray-400">Distancia:</span>
+                    <span className="font-mono font-bold">{tooltipData.distanciaTotal.toFixed(2)} km</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-400">Tiempo:</span>
+                    <span className="font-mono font-bold">{Math.round(tooltipData.duracionTotalSegundos / 60)} min</span>
+                  </div>
+                </>
+              )}
+              {!tooltipData.tieneFuerza && !tooltipData.tieneCardio && (
+                <div className="text-gray-500 italic text-center">sin actividad</div>
+              )}
           </div>
         )}
         <MarcaAgua userName={user?.displayName || user?.email} />
