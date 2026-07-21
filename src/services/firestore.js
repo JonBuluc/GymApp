@@ -517,3 +517,78 @@ export const getWorkoutSessionsForWeek = async (userId, datesArray) => {
     return {};
   }
 };
+
+// Actualizar la fecha de todos los sets de una sesión y mover el documento de sesión
+export const bulkUpdateWorkoutSessionDate = async (userId, oldDate, newDate) => {
+  if (!userId || !oldDate || !newDate || oldDate === newDate) return;
+
+  const batch = writeBatch(db);
+  
+  // 1. Obtener todos los logs de entrenamiento de esa fecha
+  const logsRef = collection(db, "workout_logs");
+  const q = query(logsRef, where("userId", "==", userId), where("dateString", "==", oldDate));
+  const snapshot = await getDocs(q);
+
+  snapshot.docs.forEach((docSnap) => {
+    const data = docSnap.data();
+    let newCreatedAt = data.createdAt;
+    
+    if (data.createdAt) {
+      try {
+        const dateObj = data.createdAt.toDate();
+        const hours = dateObj.getHours();
+        const minutes = dateObj.getMinutes();
+        const seconds = dateObj.getSeconds();
+        newCreatedAt = Timestamp.fromDate(new Date(`${newDate}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`));
+      } catch {
+        newCreatedAt = Timestamp.fromDate(new Date(`${newDate}T12:00:00`));
+      }
+    } else {
+      newCreatedAt = Timestamp.fromDate(new Date(`${newDate}T12:00:00`));
+    }
+
+    batch.update(docSnap.ref, {
+      dateString: newDate,
+      createdAt: newCreatedAt
+    });
+  });
+
+  // 2. Mover el documento de la sesión de entrenamiento (workout_sessions)
+  const oldSessionRef = doc(db, "workout_sessions", `${userId}_${oldDate}`);
+  const newSessionRef = doc(db, "workout_sessions", `${userId}_${newDate}`);
+  
+  const oldSessionSnap = await getDoc(oldSessionRef);
+  if (oldSessionSnap.exists()) {
+    const sessionData = oldSessionSnap.data();
+    batch.set(newSessionRef, {
+      ...sessionData,
+      lastUpdated: serverTimestamp()
+    }, { merge: true });
+    batch.delete(oldSessionRef);
+  }
+
+  await batch.commit();
+};
+
+// Eliminar todos los sets y el documento de sesión de una fecha
+export const bulkDeleteWorkoutSession = async (userId, date) => {
+  if (!userId || !date) return;
+
+  const batch = writeBatch(db);
+
+  // 1. Obtener y eliminar todos los logs de esa fecha
+  const logsRef = collection(db, "workout_logs");
+  const q = query(logsRef, where("userId", "==", userId), where("dateString", "==", date));
+  const snapshot = await getDocs(q);
+
+  snapshot.docs.forEach((docSnap) => {
+    batch.delete(docSnap.ref);
+  });
+
+  // 2. Eliminar el documento de la sesión
+  const sessionRef = doc(db, "workout_sessions", `${userId}_${date}`);
+  batch.delete(sessionRef);
+
+  await batch.commit();
+};
+

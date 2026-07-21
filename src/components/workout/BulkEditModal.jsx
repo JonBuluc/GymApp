@@ -95,7 +95,7 @@ const BulkEditModal = ({ isOpen, onClose, onSave, onDelete, bulkEditData, availa
           {bulkEditData.type === 'rename_exercise' && (
             <button 
               onClick={handleDelete}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition-colors text-sm"
+              className="w-full bg-red-900/20 hover:bg-red-900/30 border border-red-900/50 text-red-400 font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
             >
               Eliminar Ejercicio
             </button>

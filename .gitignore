@@ -31,3 +31,8 @@ dist-ssr
 # Firebase
 .firebase/
 firebase-debug.log
+
+.agents/
+agent/*
+skills-lock.json
+package-lock.json

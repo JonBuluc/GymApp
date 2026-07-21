@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { downloadAsPNG } from '../../utils/downloadImage';
 import MarcaAgua from '../ui/MarcaAgua';
 
-const CardioSessionCard = ({ sesionesDelDia, fechaSesion, nombreUsuario }) => {
+const CardioSessionCard = ({ sesionesDelDia, fechaSesion, onEditSessionDate, onEditCardio, nombreUsuario }) => {
   const referenciaTarjeta = useRef(null);
 
   const formatearTiempo = (totalSegundos) => {
@@ -38,17 +38,22 @@ const CardioSessionCard = ({ sesionesDelDia, fechaSesion, nombreUsuario }) => {
     <div ref={referenciaTarjeta} className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg relative">
       <div className="bg-gray-750 pt-4 px-4 pb-4 flex justify-between items-start">
         <div>
-          <h3 className="text-lg font-bold text-white capitalize">
+          <h3 
+            onClick={() => onEditSessionDate && onEditSessionDate(fechaSesion)}
+            className={`text-lg font-bold text-white capitalize ${onEditSessionDate ? 'cursor-pointer hover:text-blue-400 transition-colors' : ''}`}
+          >
             {new Date(fechaSesion + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
             <span className="text-gray-500 ml-2 text-sm font-normal">{new Date(fechaSesion + 'T12:00:00').getFullYear()}</span>
           </h3>
         </div>
-        <button onClick={() => downloadAsPNG(referenciaTarjeta, 'cardio_' + fechaSesion)} className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors" title="descargar sesion">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-          </svg>
-        </button>
+        <div className="flex gap-1">
+          <button onClick={() => downloadAsPNG(referenciaTarjeta, 'cardio_' + fechaSesion)} className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors" title="descargar sesion">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 divide-x divide-gray-700 border-t border-b border-gray-700 bg-gray-800/50">
@@ -59,9 +64,16 @@ const CardioSessionCard = ({ sesionesDelDia, fechaSesion, nombreUsuario }) => {
 
       <div className="p-4 space-y-4">
         {sesionesDelDia.map((sesionUnica, indiceBucle) => (
-          <div key={sesionUnica.id || indiceBucle} className="bg-gray-800 border border-gray-700 p-3 rounded-lg hover:bg-gray-700/50 transition-colors">
+          <div 
+            key={sesionUnica.id || indiceBucle} 
+            onClick={() => onEditCardio && onEditCardio(sesionUnica)}
+            className={`bg-gray-800 border border-gray-700 p-3 rounded-lg hover:bg-gray-700/50 transition-colors ${onEditCardio ? 'cursor-pointer' : ''}`}
+          >
             <div className="flex justify-between items-baseline mb-2">
-              <div className="flex items-center gap-2"><h4 className="text-white font-bold capitalize text-base">{sesionUnica.nombre}</h4><span className="text-[10px] px-2 py-0.5 rounded-full capitalize border border-gray-600 bg-gray-700/50 text-gray-400">{sesionUnica.tipo}</span></div>
+              <div className="flex items-center gap-2">
+                <h4 className={`text-white font-bold capitalize text-base ${onEditCardio ? 'hover:text-green-400 transition-colors' : ''}`}>{sesionUnica.nombre}</h4>
+                <span className="text-[10px] px-2 py-0.5 rounded-full capitalize border border-gray-600 bg-gray-700/50 text-gray-400">{sesionUnica.tipo}</span>
+              </div>
             </div>
             <div className="flex justify-between text-sm font-mono text-gray-300">
               <div><span className="text-white font-bold">{sesionUnica.distancia}</span> {sesionUnica.unidadDistancia}</div>

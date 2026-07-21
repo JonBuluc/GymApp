@@ -12,7 +12,7 @@ const convertWeight = (weight, fromUnit, toUnit) => {
   return weight;
 };
 
-const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userName }) => {
+const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, onEditSessionDate, userName }) => {
   const cardRef = useRef(null);
   const [duration, setDuration] = useState(null);
   const [isDurationModalOpen, setIsDurationModalOpen] = useState(false);
@@ -88,7 +88,10 @@ const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userN
       {/* card header */}
       <div className="bg-gray-750 pt-4 px-4 pb-4 flex justify-between items-start">
         <div>
-          <h3 className="text-lg font-bold text-white capitalize">
+          <h3 
+            onClick={() => onEditSessionDate && onEditSessionDate(session.date)}
+            className={`text-lg font-bold text-white capitalize ${onEditSessionDate ? 'cursor-pointer hover:text-blue-400 transition-colors' : ''}`}
+          >
             {new Date(session.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
             <span className="text-gray-500 ml-2 text-sm font-normal">{new Date(session.date + 'T12:00:00').getFullYear()}</span>
           </h3>
@@ -111,16 +114,18 @@ const SessionCard = ({ session, displayUnit = 'kg', onEditSet, onBulkEdit, userN
             ))}
           </div>
         </div>
-        <button 
-          onClick={() => downloadAsPNG(cardRef, 'entreno_' + session.date)}
-          className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors"
-          title="Descargar sesión"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-          </svg>
-        </button>
+        <div className="flex gap-1">
+          <button 
+            onClick={() => downloadAsPNG(cardRef, 'entreno_' + session.date)}
+            className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors"
+            title="Descargar sesión"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* duration badge */}

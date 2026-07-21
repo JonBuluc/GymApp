@@ -153,7 +153,7 @@ const DatePicker = ({ fechaSeleccionada, alCambiarFecha, etiqueta }) => {
       </button>
 
       {estaAbierto && (
-        <div className="absolute z-50 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl p-4 w-full sm:w-80 left-0 top-full">
+        <div className="absolute z-50 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl p-4 w-80 max-w-[calc(100vw-2rem)] left-0 top-full">
           <div className="flex justify-between items-center mb-4">
             <button
               type="button"

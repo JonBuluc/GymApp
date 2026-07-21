@@ -4,13 +4,16 @@ import WorkoutRecorder from "../components/workout/WorkoutRecorder";
 import SessionCard from "../components/workout/SessionCard";
 import EditSetModal from "../components/workout/EditSetModal";
 import BulkEditModal from "../components/workout/BulkEditModal";
+import BulkSessionDateModal from "../components/ui/BulkSessionDateModal";
 import HelpMarker from "../components/ui/HelpMarker";
 import StatsPanel from "../components/workout/StatsPanel";
-import { getWorkoutHistory, updateWorkoutSet, deleteWorkoutSet, bulkUpdateMuscleGroup, getMuscleGroups, getExerciseStats } from "../services/firestore";
+import { getWorkoutHistory, updateWorkoutSet, deleteWorkoutSet, bulkUpdateMuscleGroup, getMuscleGroups, getExerciseStats, bulkUpdateWorkoutSessionDate, bulkDeleteWorkoutSession } from "../services/firestore";
 import CardioRecorder from "../components/cardio/CardioRecorder";
 import CardioStatsPanel from "../components/cardio/CardioStatsPanel";
 import CardioSessionCard from "../components/cardio/CardioSessionCard";
+import EditCardioModal from "../components/cardio/EditCardioModal";
 import { obtenerHistorialCardio, obtenerRecordsCardio } from "../services/lecturasCardio";
+import { bulkUpdateCardioSessionDate, bulkDeleteCardioSession, actualizarSesionCardio, eliminarSesionCardio } from "../services/escriturasCardio";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -39,6 +42,9 @@ const Dashboard = () => {
   const [recordsCardio, setRecordsCardio] = useState(null);
   const [tipoCardioActivo, setTipoCardioActivo] = useState("");
   const [nombreCardioActivo, setNombreCardioActivo] = useState("");
+  const [sessionEditData, setSessionEditData] = useState(null); // { date: string, type: 'workout' | 'cardio' }
+  const [isCardioModalOpen, setIsCardioModalOpen] = useState(false);
+  const [editingCardio, setEditingCardio] = useState(null);
 
   // Cargar sesion del dia seleccionado
   useEffect(() => {
@@ -166,6 +172,68 @@ const Dashboard = () => {
     }
   };
 
+  const handleSaveSessionDate = async (type, oldDate, newDate) => {
+    if (!user) return;
+    try {
+      if (type === 'workout') {
+        await bulkUpdateWorkoutSessionDate(user.uid, oldDate, newDate);
+      } else {
+        await bulkUpdateCardioSessionDate(user.uid, oldDate, newDate);
+      }
+      setSelectedDate(newDate); // navegar a la nueva fecha
+      setSessionEditData(null);
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error("error actualizando fecha de sesion:", error);
+      alert("Error al actualizar la fecha de la sesión.");
+    }
+  };
+
+  const handleDeleteSession = async (type, date) => {
+    if (!user) return;
+    try {
+      if (type === 'workout') {
+        await bulkDeleteWorkoutSession(user.uid, date);
+      } else {
+        await bulkDeleteCardioSession(user.uid, date);
+      }
+      setSessionEditData(null);
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error("error eliminando sesion:", error);
+      alert("Error al eliminar la sesión.");
+    }
+  };
+
+  const handleEditCardio = (cardioLog) => {
+    setEditingCardio(cardioLog);
+    setIsCardioModalOpen(true);
+  };
+
+  const handleSaveCardio = async (cardioId, updatedFields) => {
+    try {
+      await actualizarSesionCardio(cardioId, updatedFields);
+      setRefreshTrigger(prev => prev + 1);
+      setIsCardioModalOpen(false);
+      setEditingCardio(null);
+    } catch (error) {
+      console.error("error updating cardio:", error);
+      alert("Error al actualizar la sesión de cardio.");
+    }
+  };
+
+  const handleDeleteCardio = async (cardioId) => {
+    try {
+      await eliminarSesionCardio(cardioId);
+      setRefreshTrigger(prev => prev + 1);
+      setIsCardioModalOpen(false);
+      setEditingCardio(null);
+    } catch (error) {
+      console.error("error deleting cardio:", error);
+      alert("Error al eliminar la sesión de cardio.");
+    }
+  };
+
   return (
     <div className="py-6">
         {/* selector de modo de entrenamiento */}
@@ -227,6 +295,7 @@ const Dashboard = () => {
                 displayUnit={unit}
                 onEditSet={handleEditSet}
                 onBulkEdit={setBulkEdit}
+                onEditSessionDate={(date) => setSessionEditData({ date, type: 'workout' })}
                 userName={user?.displayName || user?.email}
               />
             </HelpMarker>
@@ -256,7 +325,13 @@ const Dashboard = () => {
             )}
             {historialCardio.length > 0 && (
               <div className="max-w-3xl mx-auto px-4 mt-8">
-                <CardioSessionCard sesionesDelDia={historialCardio} fechaSesion={selectedDate} nombreUsuario={user?.displayName || user?.email} />
+                <CardioSessionCard 
+                  sesionesDelDia={historialCardio} 
+                  fechaSesion={selectedDate} 
+                  onEditSessionDate={(date) => setSessionEditData({ date, type: 'cardio' })}
+                  onEditCardio={handleEditCardio}
+                  nombreUsuario={user?.displayName || user?.email} 
+                />
               </div>
             )}
           </>
@@ -277,6 +352,24 @@ const Dashboard = () => {
           onDelete={handleBulkDelete}
           bulkEditData={bulkEdit}
           availableMuscles={availableMuscles}
+          user={user}
+        />
+
+        <BulkSessionDateModal
+          isOpen={!!sessionEditData}
+          onClose={() => setSessionEditData(null)}
+          onSave={handleSaveSessionDate}
+          onDelete={handleDeleteSession}
+          date={sessionEditData?.date}
+          sessionType={sessionEditData?.type}
+        />
+
+        <EditCardioModal
+          isOpen={isCardioModalOpen}
+          onClose={() => setIsCardioModalOpen(false)}
+          onSave={handleSaveCardio}
+          onDelete={handleDeleteCardio}
+          initialData={editingCardio}
           user={user}
         />
     </div>
